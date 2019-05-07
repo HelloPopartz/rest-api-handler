@@ -1,0 +1,50 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HelloPopartz/rest-api-handler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HelloPopartz/rest-api-handler/issues"
+  },
+  "scripts": {
+    "lint": "lerna run lint",
+    "format": "lerna run format",
+    "build": "lerna run build",
+    "setup": "lerna bootstrap",
+    "run": "yarn workspace",
+    "coveralls": "lerna run test --coverage && cat ./coverage/lcov.info | coveralls",
+    "prepare": "lerna run build",
+    "prepublishOnly": "lerna run test && lerna run lint",
+    "preversion": "lerna run lint",
+    "version": "lerna run format && git add -A",
+    "postversion": "git push && git push --tags"
+  },
+  "homepage": "https://github.com/HelloPopartz/rest-api-handler",
+  "author": "Ricardo Domínguez Álvarez <r.dominguez.alvarez.dev@gmail.com>",
+  "license": "MIT",
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "devDependencies": {
+    "@types/node": "^12.0.0",
+    "jest": "^24.8.0",
+    "lerna": "^3.13.4",
+    "prettier": "^1.17.0",
+    "rollup": "^1.11.3",
+    "rollup-plugin-typescript2": "^0.21.0",
+    "rollup-plugin-commonjs": "^9.3.4",
+    "rollup-plugin-node-resolve": "^4.2.3",
+    "ts-jest": "^24.0.2",
+    "tslint": "^5.16.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-plugin-prettier": "^2.0.1",
+    "typescript": "^3.4.5"
+  }
+}
