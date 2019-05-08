@@ -1,34 +1,53 @@
-import { RouteInheritableOptions, createHandlers } from './handlers'
-import { createStore } from './store'
+import {
+  RouteInheritableOptions,
+  createHandlers,
+  Handlers,
+  generateDefaultRoutes,
+} from './handlers'
+import { createStore, CacheStore } from './store'
 import { RouteMap } from './handlers'
 import { HttpClient } from './httpClient'
 
-export interface CreateResourceOptions<
+export interface RoutesConfigOptions<
   ResourceType,
-  ExtraRoutes extends RouteMap,
-  HttpClientOptions,
-  ResponseType
-> extends RouteInheritableOptions<ResourceType> {
-  httpClient: HttpClient<HttpClientOptions, ResponseType>
-  routes?: ExtraRoutes
+  ExtraRoutes extends RouteMap<ResourceType>,
+  HttpClientOptions
+> extends RouteInheritableOptions {
+  httpClient: HttpClient<HttpClientOptions>
+  extraRoutes?: ExtraRoutes
+}
+
+export interface StoreConfigOptions<ResourceType> {
+  active: boolean
+  getResourceId: (data: ResourceType) => string
+}
+
+export interface RestApiResource<
+  ResourceType,
+  Routes extends RouteMap<ResourceType>
+> {
+  api: Handlers<ResourceType, Routes>
+  store: CacheStore<ResourceType>
 }
 
 export function createResource<
   ResourceType,
-  ExtraRoutes extends RouteMap,
-  HttpClientOptions,
-  ResponseType = ResourceType
+  ExtraRoutes extends RouteMap<ResourceType>,
+  HttpClientOptions = any
 >(
-  config: CreateResourceOptions<
-    ResourceType,
-    ExtraRoutes,
-    HttpClientOptions,
-    ResponseType
-  >
+  {
+    extraRoutes,
+    ...routeConfig
+  }: RoutesConfigOptions<ResourceType, ExtraRoutes, HttpClientOptions>,
+  storeConfig?: StoreConfigOptions<ResourceType>
 ) {
-  const store = createStore<ResourceType>()
-  return {
-    api: createHandlers(config, store),
-    store,
+  const finalRoutes = {
+    ...generateDefaultRoutes<ResourceType>(),
+    ...extraRoutes,
   }
+  const store = createStore<ResourceType>(storeConfig)
+  return {
+    api: createHandlers(routeConfig, finalRoutes, store),
+    store,
+  } as RestApiResource<ResourceType, typeof finalRoutes>
 }

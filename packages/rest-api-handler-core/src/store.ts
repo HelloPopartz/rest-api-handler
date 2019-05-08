@@ -1,121 +1,111 @@
-import { Dictionary } from "lodash";
-import { AnyFunction } from "global";
-
-export enum CacheDataType {
-  list = "list",
-  item = "item",
-  map = "map"
-}
+import { StoreConfigOptions } from './createResource'
 
 export enum CacheActionType {
-  update = "update",
-  delete = "delete",
-  set = "set"
+  delete = 'delete',
+  set = 'set',
 }
 
-export type CacheActionConfig = {
-  dataType: CacheDataType;
-  responseType: CacheActionType;
-};
-
 export type SubscribeCallback<ResourceType> = (params: {
-  action: CacheActionType;
-  data: ResourceType;
-  id: string;
-  store: Map<string, ResourceType>;
-}) => void;
+  action: CacheActionType
+  data: ResourceType
+  id: string
+  store: Map<string, ResourceType>
+}) => void
 
-export type CacheStore<ResourceType> = {
-  set: (data: ResourceType, id: string) => void;
-  get: (id: string) => ResourceType;
-  delete: (id: string) => boolean;
-  clear: () => void;
+export type CacheStore<ResourceType> = Readonly<{
+  set: (data: ResourceType, id: string) => void
+  get: (id: string) => ResourceType
+  delete: (id: string) => boolean
+  clear: () => void
   subscribeTo: (
     id: string,
     callback: SubscribeCallback<ResourceType>
-  ) => boolean;
-  subscribe: (callback: SubscribeCallback<ResourceType>) => void;
-};
+  ) => boolean
+  subscribe: (callback: SubscribeCallback<ResourceType>) => void
+  active: StoreConfigOptions<ResourceType>['active']
+  getResourceId: StoreConfigOptions<ResourceType>['getResourceId']
+}>
 
-export function createStore<ResourceType>(): CacheStore<ResourceType> {
+export function createStore<ResourceType>(
+  storeConfig: StoreConfigOptions<ResourceType> = {
+    active: false,
+    getResourceId: () => 'unset',
+  }
+): CacheStore<ResourceType> {
   // Store data
-  let store = {} as Map<string, ResourceType>;
-  let subscriptions = {} as Map<
-    string,
-    CacheStore<ResourceType>["subscribeTo"]
-  >;
+  let store = {} as Map<string, ResourceType>
+  let subscriptions = {} as Map<string, CacheStore<ResourceType>['subscribeTo']>
   let globalSubscription:
     | SubscribeCallback<ResourceType>
-    | undefined = undefined;
+    | undefined = undefined
 
   // Handlers
   const set = (data: ResourceType, id: string) => {
-    const alreadyInStore = !!store[id];
-    store[id] = data;
+    store[id] = data
     if (subscriptions[id]) {
-      subscriptions[id]({ action: CacheActionType.update, data, id, store });
+      subscriptions[id]({ action: CacheActionType.set, data, id, store })
     }
     if (globalSubscription) {
       globalSubscription({
-        action: alreadyInStore ? CacheActionType.update : CacheActionType.set,
+        action: CacheActionType.set,
         data,
         id,
-        store
-      });
+        store,
+      })
     }
-  };
+  }
 
   const get = (id: string) => {
-    return store[id];
-  };
+    return store[id]
+  }
 
   const deleteHandler = (id: string) => {
     if (store[id]) {
-      const dataToDelete = store[id];
-      delete store[id];
+      const dataToDelete = store[id]
+      delete store[id]
       if (subscriptions[id]) {
         subscriptions[id]({
           action: CacheActionType.delete,
           data: dataToDelete,
           id,
-          store
-        });
+          store,
+        })
       }
       if (globalSubscription) {
         globalSubscription({
           action: CacheActionType.delete,
           data: dataToDelete,
           id,
-          store
-        });
+          store,
+        })
       }
-      return true;
+      return true
     } else {
-      return false;
+      return false
     }
-  };
+  }
 
   const clear = () => {
-    store = {} as Map<string, ResourceType>;
-    subscriptions = {} as Map<string, CacheStore<ResourceType>["subscribeTo"]>;
-    globalSubscription = undefined;
-  };
+    store = {} as Map<string, ResourceType>
+    subscriptions = {} as Map<string, CacheStore<ResourceType>['subscribeTo']>
+    globalSubscription = undefined
+  }
 
   const subscribeTo = (
     id: string,
     callback: SubscribeCallback<ResourceType>
   ) => {
     if (store[id]) {
-      subscriptions[id] = callback;
-      return true;
+      subscriptions[id] = callback
+      return true
     } else {
-      return false;
+      return false
     }
-  };
+  }
 
   const subscribe = (callback: SubscribeCallback<ResourceType>) => {
-    globalSubscription = callback;
-  };
+    globalSubscription = callback
+  }
 
   return {
     set,
@@ -123,6 +113,7 @@ export function createStore<ResourceType>(): CacheStore<ResourceType> {
     delete: deleteHandler,
     clear,
     subscribeTo,
-    subscribe
-  };
+    subscribe,
+    ...storeConfig,
+  }
 }

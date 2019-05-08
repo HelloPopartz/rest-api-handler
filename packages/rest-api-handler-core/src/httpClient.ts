@@ -1,16 +1,13 @@
 import { RouteOptions, RouteData, RouteInheritableOptions } from './handlers'
 import queryString from 'query-string'
 
-export type HttpClientRequestData<HttpClientOptions> = Pick<
-  RouteInheritableOptions<any>,
-  'entityUrl'
-> &
-  Pick<RouteOptions<any, () => {}>, 'method' | 'resource'> &
+export type HttpClientRequestData<HttpClientOptions> = RouteInheritableOptions &
+  Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
   RouteData<any, any[], Object, HttpClientOptions>
 
-export type HttpClient<HttpClientOptions, ResponseType> = (
+export type HttpClient<HttpClientOptions> = (
   requestData: HttpClientRequestData<HttpClientOptions>
-) => Promise<ResponseType>
+) => Promise<any>
 
 export type FetchConfig = Partial<Request>
 export type FetchResponse = Response
@@ -46,7 +43,7 @@ export function generateUrl({
 
 export function defaultHttpClient(
   extraConfig?: FetchConfig
-): HttpClient<FetchConfig, FetchResponse> {
+): HttpClient<FetchConfig> {
   return async ({
     entityUrl,
     method,

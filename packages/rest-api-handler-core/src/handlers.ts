@@ -1,11 +1,6 @@
 import { mapObject } from './utils/object'
-import {
-  CacheActionConfig,
-  CacheActionType,
-  CacheDataType,
-  CacheStore,
-} from './store'
-import { CreateResourceOptions } from './createResource'
+import { CacheActionType, CacheStore } from './store'
+import { RoutesConfigOptions, StoreConfigOptions } from './createResource'
 import { HttpClient } from './httpClient'
 
 export enum RouteMethod {
@@ -22,9 +17,8 @@ export type RouteData<RouteParams, BodyData, QueryParams, HttpClientOptions> = {
   config?: HttpClientOptions
 }
 
-export interface RouteInheritableOptions<ResourceType> {
+export interface RouteInheritableOptions {
   entityUrl: string
-  transformResponse?: (response: any) => ResourceType
 }
 
 export interface RouteOptions<
@@ -36,29 +30,51 @@ export interface RouteOptions<
     routeParams?: any[]
     queryParams?: Object
     config?: any
-  }
-> extends Partial<RouteInheritableOptions<ResourceType>> {
-  publicApi?: TransformRequestFunc
+  } = () => {},
+  DataType extends 'item' | 'list' = 'item'
+> extends Partial<RouteInheritableOptions> {
+  handler: TransformRequestFunc extends () => {}
+    ? undefined
+    : TransformRequestFunc
   resource?: string
+  dataType?: DataType
+  transformResponse?: (
+    response: any
+  ) => DataType extends 'list' ? ResourceType[] : ResourceType
   method: RouteMethod
-  cacheConfig?: CacheActionConfig
+  cacheAction?: CacheActionType
 }
 
-export type RouteMap = {
-  [K: string]: RouteOptions<any, any>
+export type RouteMap<ResourceType> = {
+  [K: string]: RouteOptions<ResourceType, any, any>
 }
 
-export type Handlers<Routes extends RouteMap> = {
+export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
   [P in keyof Routes]: (
-    ...params: Parameters<NonNullable<Routes[P]['publicApi']>>
-  ) => Promise<ReturnType<NonNullable<Routes[P]['transformResponse']>>>
+    ...params: Routes[P]['handler'] extends undefined
+      ? []
+      : Parameters<NonNullable<Routes[P]['handler']>>
+  ) => Routes[P]['dataType'] extends 'list' ? ResourceType[] : ResourceType
+}
+
+function saveInStore<ResourceType>(
+  { delete: deleteHandler, set, getResourceId }: CacheStore<ResourceType>,
+  { action, data }: { action: CacheActionType; data: ResourceType }
+) {
+  switch (action) {
+    case CacheActionType.delete:
+      deleteHandler(getResourceId(data))
+      break
+    case CacheActionType.set:
+      set(data, getResourceId(data))
+      break
+  }
 }
 
 export function generateHandlers<
   ResourceType,
-  Routes extends RouteMap,
-  HttpClientOptions,
-  ResponseType
+  Routes extends RouteMap<ResourceType>,
+  HttpClientOptions
 >({
   routes,
   httpClient,
@@ -66,98 +82,100 @@ export function generateHandlers<
   store,
 }: {
   routes: Routes
-  httpClient: HttpClient<HttpClientOptions, ResponseType>
-  inheritableRouteConfig: RouteInheritableOptions<ResourceType>
+  httpClient: HttpClient<HttpClientOptions>
+  inheritableRouteConfig: RouteInheritableOptions
   store: CacheStore<ResourceType>
-}): Handlers<Routes> {
+}): Handlers<ResourceType, Routes> {
   const mapRouteToHandler = <
-    RouteConfig extends RouteOptions<ResourceType, any>
+    RouteConfig extends RouteOptions<ResourceType, any, any>
   >({
-    publicApi,
-    transformResponse = inheritableRouteConfig.transformResponse,
+    handler,
+    transformResponse,
     entityUrl = inheritableRouteConfig.entityUrl,
     method,
+    dataType = 'item',
     resource,
+    cacheAction,
   }: RouteConfig) => {
-    const handler = async (
-      ...params: Parameters<NonNullable<typeof publicApi>>
+    const apiHandler = async (
+      ...params: Parameters<NonNullable<typeof handler>>
     ) => {
       let requestData = {}
-      if (publicApi) {
-        requestData = publicApi(...params)
+      // Parse request data
+      if (handler) {
+        requestData = handler(...params)
       }
+      // Make api call
       const data = await httpClient({
         method,
         resource,
         entityUrl,
         ...requestData,
       })
-      return transformResponse ? transformResponse(data) : data
+      const parsedData = transformResponse ? transformResponse(data) : data
+      const storeActive = store.active && !!store.getResourceId
+      if (storeActive && !!cacheAction) {
+        if (dataType === 'list') {
+          parsedData.forEach((data: ResourceType) =>
+            saveInStore(store, { action: cacheAction, data })
+          )
+        } else {
+          saveInStore(store, { action: cacheAction, data: parsedData })
+        }
+      }
+      return parsedData
     }
-    return handler
+    return apiHandler
   }
   return mapObject(routes, mapRouteToHandler) as any
 }
 
-function generateDefaultRoutes<ResourceType>(): {
-  list: RouteOptions<ResourceType[], () => {}>
+export function generateDefaultRoutes<ResourceType>(): {
+  list: RouteOptions<ResourceType, () => {}, 'list'>
   create: RouteOptions<
     ResourceType,
     (data: ResourceType) => { body: ResourceType }
   >
-  get: RouteOptions<ResourceType, (id: number) => { routeParams: [number] }>
+  get: RouteOptions<ResourceType, (id: string) => { routeParams: [string] }>
   update: RouteOptions<
     ResourceType,
-    (id: number, data: ResourceType) => { routeParams: [number] }
+    (id: string, data: ResourceType) => { routeParams: [string] }
   >
-  delete: RouteOptions<ResourceType, (id: number) => { routeParams: [number] }>
+  delete: RouteOptions<ResourceType, (id: string) => { routeParams: [string] }>
 } {
   return {
     list: {
+      handler: undefined,
       method: RouteMethod.get,
-      cacheConfig: {
-        dataType: CacheDataType.list,
-        responseType: CacheActionType.set,
-      },
+      cacheAction: CacheActionType.set,
+      dataType: 'list',
     },
     create: {
       method: RouteMethod.post,
-      cacheConfig: {
-        dataType: CacheDataType.item,
-        responseType: CacheActionType.update,
-      },
-      publicApi: (data: ResourceType) => ({
+      cacheAction: CacheActionType.set,
+      handler: (data: ResourceType) => ({
         body: data,
       }),
     },
     get: {
       method: RouteMethod.get,
-      cacheConfig: {
-        dataType: CacheDataType.item,
-        responseType: CacheActionType.set,
-      },
-      publicApi: (id: number) => ({
+      cacheAction: CacheActionType.set,
+      handler: (id: string) => ({
         routeParams: [id],
       }),
     },
     update: {
       method: RouteMethod.put,
-      cacheConfig: {
-        dataType: CacheDataType.item,
-        responseType: CacheActionType.update,
-      },
-      publicApi: (id: number, data: ResourceType) => ({
+      cacheAction: CacheActionType.set,
+      handler: (id: string, data: ResourceType) => ({
         routeParams: [id],
         body: data,
       }),
     },
     delete: {
       method: RouteMethod.delete,
-      cacheConfig: {
-        dataType: CacheDataType.item,
-        responseType: CacheActionType.delete,
-      },
-      publicApi: (id: number) => ({
+      cacheAction: CacheActionType.delete,
+      handler: (id: string) => ({
         routeParams: [id],
       }),
     },
@@ -166,33 +184,18 @@ function generateDefaultRoutes<ResourceType>(): {
 
 export function createHandlers<
   ResourceType,
-  ExtraRoutes extends RouteMap,
-  HttpClientOptions,
-  ResponseType
+  Routes extends RouteMap<ResourceType>,
+  HttpClientOptions
 >(
   {
     httpClient,
-    routes = {} as ExtraRoutes,
     ...inheritableRouteConfig
-  }: CreateResourceOptions<
-    ResourceType,
-    ExtraRoutes,
-    HttpClientOptions,
-    ResponseType
-  >,
+  }: { httpClient: HttpClient<HttpClientOptions> } & RouteInheritableOptions,
+  routes: Routes,
   store: CacheStore<ResourceType>
 ) {
-  const finalRoutes = {
-    ...generateDefaultRoutes<ResourceType>(),
-    ...routes,
-  }
-  const handlers = generateHandlers<
-    ResourceType,
-    typeof finalRoutes,
-    HttpClientOptions,
-    ResponseType
-  >({
-    routes: finalRoutes,
+  const handlers = generateHandlers<ResourceType, Routes, HttpClientOptions>({
+    routes,
     httpClient,
     inheritableRouteConfig,
     store,
