@@ -17,14 +17,15 @@ export type CacheStore<ResourceType> = Readonly<{
   get: (id: string) => ResourceType
   delete: (id: string) => boolean
   clear: () => void
-  subscribeTo: (
-    id: string,
-    callback: SubscribeCallback<ResourceType>
-  ) => boolean
-  subscribe: (callback: SubscribeCallback<ResourceType>) => void
+  subscribe: (id: string, callback: SubscribeCallback<ResourceType>) => string
+  unsubscribe: (id: string) => boolean
   active: StoreConfigOptions<ResourceType>['active']
   getResourceId: StoreConfigOptions<ResourceType>['getResourceId']
 }>
+
+type SubscriptionMap<ResourceType> = {
+  [key: string]: { [key: string]: SubscribeCallback<ResourceType> }
+}
 
 export function createStore<ResourceType>(
   storeConfig: StoreConfigOptions<ResourceType> = {
@@ -33,8 +34,9 @@ export function createStore<ResourceType>(
   }
 ): CacheStore<ResourceType> {
   // Store data
+  let subId = 0
   let store = {} as Map<string, ResourceType>
-  let subscriptions = {} as Map<string, CacheStore<ResourceType>['subscribeTo']>
+  let subscriptions = {} as SubscriptionMap<ResourceType>
   let globalSubscription:
     | SubscribeCallback<ResourceType>
     | undefined = undefined
@@ -43,7 +45,10 @@ export function createStore<ResourceType>(
   const set = (data: ResourceType, id: string) => {
     store[id] = data
     if (subscriptions[id]) {
-      subscriptions[id]({ action: CacheActionType.set, data, id, store })
+      const callbacks = Object.values(subscriptions[id])
+      callbacks.forEach(f =>
+        f({ action: CacheActionType.set, data, id, store })
+      )
     }
     if (globalSubscription) {
       globalSubscription({
@@ -64,12 +69,15 @@ export function createStore<ResourceType>(
       const dataToDelete = store[id]
       delete store[id]
       if (subscriptions[id]) {
-        subscriptions[id]({
-          action: CacheActionType.delete,
-          data: dataToDelete,
-          id,
-          store,
-        })
+        const callbacks = Object.values(subscriptions[id])
+        callbacks.forEach(f =>
+          f({
+            action: CacheActionType.delete,
+            data: dataToDelete,
+            id,
+            store,
+          })
+        )
       }
       if (globalSubscription) {
         globalSubscription({
@@ -87,24 +95,39 @@ export function createStore<ResourceType>(
 
   const clear = () => {
     store = {} as Map<string, ResourceType>
-    subscriptions = {} as Map<string, CacheStore<ResourceType>['subscribeTo']>
+    subscriptions = {} as SubscriptionMap<ResourceType>
     globalSubscription = undefined
   }
 
-  const subscribeTo = (
-    id: string,
-    callback: SubscribeCallback<ResourceType>
-  ) => {
+  const subscribe = (id: string, callback: SubscribeCallback<ResourceType>) => {
+    if ('all') {
+      globalSubscription = callback
+      return 'all'
+    }
+    subId++
     if (store[id]) {
-      subscriptions[id] = callback
-      return true
+      if (subscriptions[id]) {
+        subscriptions[id][subId] = callback
+      } else {
+        subscriptions[id] = { [subId]: callback }
+      }
+      return `${id}-${subId}`
     } else {
-      return false
+      return ''
     }
   }
 
-  const subscribe = (callback: SubscribeCallback<ResourceType>) => {
-    globalSubscription = callback
+  const unsubscribe = (id: string) => {
+    try {
+      const ids = id.split('-')
+      delete subscriptions[ids[0]][ids[1]]
+      if (subscriptions[ids[0]] === {}) {
+        delete subscriptions[ids[0]]
+      }
+      return true
+    } catch (e) {
+      return false
+    }
   }
 
   return {
@@ -112,8 +135,8 @@ export function createStore<ResourceType>(
     get,
     delete: deleteHandler,
     clear,
-    subscribeTo,
     subscribe,
+    unsubscribe,
     ...storeConfig,
   }
 }

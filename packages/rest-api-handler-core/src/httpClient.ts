@@ -3,7 +3,7 @@ import queryString from 'query-string'
 
 export type HttpClientRequestData<HttpClientOptions> = RouteInheritableOptions &
   Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
-  RouteData<any, any[], Object, HttpClientOptions>
+  RouteData<HttpClientOptions>
 
 export type HttpClient<HttpClientOptions> = (
   requestData: HttpClientRequestData<HttpClientOptions>

@@ -1,6 +1,5 @@
 import { mapObject } from './utils/object'
 import { CacheActionType, CacheStore } from './store'
-import { RoutesConfigOptions, StoreConfigOptions } from './createResource'
 import { HttpClient } from './httpClient'
 
 export enum RouteMethod {
@@ -10,10 +9,10 @@ export enum RouteMethod {
   delete = 'delete',
 }
 
-export type RouteData<RouteParams, BodyData, QueryParams, HttpClientOptions> = {
-  body?: BodyData
-  routeParams?: RouteParams
-  queryParams?: QueryParams
+export type RouteData<HttpClientOptions = any> = {
+  body?: any
+  routeParams?: any[]
+  queryParams?: Object
   config?: HttpClientOptions
 }
 
@@ -23,14 +22,7 @@ export interface RouteInheritableOptions {
 
 export interface RouteOptions<
   ResourceType,
-  TransformRequestFunc extends (
-    ...args: any
-  ) => {
-    body?: any
-    routeParams?: any[]
-    queryParams?: Object
-    config?: any
-  } = () => {},
+  TransformRequestFunc extends (...args: any) => RouteData = () => {},
   DataType extends 'item' | 'list' = 'item'
 > extends Partial<RouteInheritableOptions> {
   handler: TransformRequestFunc extends () => {}
@@ -39,7 +31,8 @@ export interface RouteOptions<
   resource?: string
   dataType?: DataType
   transformResponse?: (
-    response: any
+    response: any,
+    requestData: RouteData
   ) => DataType extends 'list' ? ResourceType[] : ResourceType
   method: RouteMethod
   cacheAction?: CacheActionType
@@ -112,7 +105,9 @@ export function generateHandlers<
         entityUrl,
         ...requestData,
       })
-      const parsedData = transformResponse ? transformResponse(data) : data
+      const parsedData = transformResponse
+        ? transformResponse(data, requestData)
+        : data
       const storeActive = store.active && !!store.getResourceId
       if (storeActive && !!cacheAction) {
         if (dataType === 'list') {
