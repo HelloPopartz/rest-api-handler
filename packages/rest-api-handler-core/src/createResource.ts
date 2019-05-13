@@ -8,15 +8,14 @@ import { createStore, CacheStore } from './store'
 import { RouteMap } from './handlers'
 import { HttpClient } from './httpClient'
 
-export interface RoutesConfigOptions<
+export type RoutesConfigOptions<
   ResourceType,
   ExtraRoutes extends RouteMap<ResourceType>,
   HttpClientOptions
-> extends RouteInheritableOptions {
+> = RouteInheritableOptions & {
   httpClient: HttpClient<HttpClientOptions>
   extraRoutes?: ExtraRoutes
 }
-
 export interface StoreConfigOptions<ResourceType> {
   active: boolean
   getResourceId: (data: ResourceType) => string

@@ -3,10 +3,11 @@ import { CacheActionType, CacheStore } from './store'
 import { HttpClient } from './httpClient'
 
 export enum RouteMethod {
-  get = 'get',
-  post = 'post',
-  put = 'put',
-  delete = 'delete',
+  get = 'GET',
+  post = 'POST',
+  put = 'PUT',
+  patch = 'PATCH',
+  delete = 'DELETE',
 }
 
 export type RouteData<HttpClientOptions = any> = {
@@ -47,7 +48,9 @@ export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
     ...params: Routes[P]['handler'] extends undefined
       ? []
       : Parameters<NonNullable<Routes[P]['handler']>>
-  ) => Routes[P]['dataType'] extends 'list' ? ResourceType[] : ResourceType
+  ) => Promise<
+    Routes[P]['dataType'] extends 'list' ? ResourceType[] : ResourceType
+  >
 }
 
 function saveInStore<ResourceType>(
@@ -131,12 +134,28 @@ export function generateDefaultRoutes<ResourceType>(): {
     ResourceType,
     (data: ResourceType) => { body: ResourceType }
   >
-  get: RouteOptions<ResourceType, (id: string) => { routeParams: [string] }>
-  update: RouteOptions<
+  get: RouteOptions<
     ResourceType,
-    (id: string, data: ResourceType) => { routeParams: [string] }
+    (id: string | number) => { routeParams: [string] }
   >
-  delete: RouteOptions<ResourceType, (id: string) => { routeParams: [string] }>
+  put: RouteOptions<
+    ResourceType,
+    (
+      id: string | number,
+      data: ResourceType
+    ) => { routeParams: [string]; body: ResourceType }
+  >
+  patch: RouteOptions<
+    ResourceType,
+    (
+      id: string | number,
+      data: Partial<ResourceType>
+    ) => { routeParams: [string]; body: Partial<ResourceType> }
+  >
+  delete: RouteOptions<
+    ResourceType,
+    (id: string | number) => { routeParams: [string] }
+  >
 } {
   return {
     list: {
@@ -155,23 +174,31 @@ export function generateDefaultRoutes<ResourceType>(): {
     get: {
       method: RouteMethod.get,
       cacheAction: CacheActionType.set,
-      handler: (id: string) => ({
-        routeParams: [id],
+      handler: (id: string | number) => ({
+        routeParams: [id.toString()],
       }),
     },
-    update: {
+    patch: {
+      method: RouteMethod.patch,
+      cacheAction: CacheActionType.set,
+      handler: (id: string | number, data: Partial<ResourceType>) => ({
+        routeParams: [id.toString()],
+        body: data,
+      }),
+    },
+    put: {
       method: RouteMethod.put,
       cacheAction: CacheActionType.set,
-      handler: (id: string, data: ResourceType) => ({
-        routeParams: [id],
+      handler: (id: string | number, data: ResourceType) => ({
+        routeParams: [id.toString()],
         body: data,
       }),
     },
     delete: {
       method: RouteMethod.delete,
       cacheAction: CacheActionType.delete,
-      handler: (id: string) => ({
-        routeParams: [id],
+      handler: (id: string | number) => ({
+        routeParams: [id.toString()],
       }),
     },
   }

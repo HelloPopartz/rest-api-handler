@@ -54,7 +54,7 @@ const dataFetchReducer = <ResourceType>(
 export function useRestResource<ResourceType>(
   apiCall: () => Promise<ResourceType>,
   store?: CacheStore<ResourceType>,
-  depArray?: any[]
+  depArray: any[] = []
 ): UseRestApiHandler<ResourceType> {
   const [state, dispatch] = useReducer<UseRestResourceReducer<ResourceType>>(
     dataFetchReducer,

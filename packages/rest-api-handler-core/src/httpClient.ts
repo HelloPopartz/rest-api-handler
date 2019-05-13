@@ -1,5 +1,6 @@
 import { RouteOptions, RouteData, RouteInheritableOptions } from './handlers'
 import queryString from 'query-string'
+import { isEmpty } from './utils/object'
 
 export type HttpClientRequestData<HttpClientOptions> = RouteInheritableOptions &
   Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
@@ -23,21 +24,20 @@ export function generateUrl({
   routeParams?: (string | number)[]
   queryParams?: Object
 }) {
-  let url = entityUrl
+  let url = entityUrl.replace(/\/$/, '')
   if (resource) {
     url += resource
   }
   if (routeParams.length !== 0) {
-    url += routeParams.reduce(
+    url += (routeParams.reduce(
       (result: string, currentValue: string | number) =>
         `${result}/${currentValue.toString()}`,
-      '/'
-    )
+      ''
+    ) as string).replace(/\/$/, '')
   }
-  if (!!queryParams) {
+  if (!!queryParams && !isEmpty(queryParams)) {
     url += `/${queryString.stringify(queryParams)}`
   }
-
   return url
 }
 
@@ -53,12 +53,21 @@ export function defaultHttpClient(
     queryParams,
     config,
   }: HttpClientRequestData<FetchConfig>) => {
-    // Read Fetch API
-    const response: FetchResponse = await window.fetch({
-      ...extraConfig,
-      url: generateUrl({ entityUrl, resource, routeParams, queryParams }),
+    console.log(
+      entityUrl,
       method,
+      resource,
+      routeParams,
       body,
+      queryParams,
+      config
+    )
+    // Read Fetch API
+    const url = generateUrl({ entityUrl, resource, routeParams, queryParams })
+    const response: FetchResponse = await window.fetch(url, {
+      ...extraConfig,
+      method,
+      body: JSON.stringify(body),
       ...config,
     } as any)
     return response.json()

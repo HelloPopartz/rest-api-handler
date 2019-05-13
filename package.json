@@ -2,6 +2,7 @@
   "name": "root",
   "private": true,
   "workspaces": [
+    "example",
     "packages/*"
   ],
   "repository": {
@@ -16,7 +17,7 @@
     "format": "lerna run format",
     "build": "lerna run build",
     "setup": "lerna bootstrap",
-    "run": "yarn workspace",
+    "run:example": "yarn workspace example start",
     "coveralls": "lerna run test --coverage && cat ./coverage/lcov.info | coveralls",
     "prepare": "lerna run build",
     "prepublishOnly": "lerna run test && lerna run lint",

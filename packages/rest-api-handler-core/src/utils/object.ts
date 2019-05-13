@@ -22,10 +22,15 @@ export function mapObject<
   callback: (currentValue: Value, key: keyof Object) => NewValue
 ): { [key in keyof Object]: NewValue } {
   const newObj: any = {}
-  Object(obj)
-    .keys()
-    .forEach((key: string) => {
-      newObj[key] = callback(obj[key], key)
-    })
+  Object.keys(obj).forEach((key: string) => {
+    newObj[key] = callback(obj[key], key)
+  })
   return newObj
+}
+
+export function isEmpty(obj: Object) {
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) return false
+  }
+  return true
 }
