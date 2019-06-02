@@ -7,8 +7,8 @@ import { useCallback } from 'react'
 const App: React.FC = () => {
   const [resourceId, setResourceId] = useState(1)
   const { loading, error, data } = useRestResource(
-    () => resource.api.get(resourceId),
-    resource.store,
+    resource,
+    resourceApi => resourceApi.get(resourceId),
     [resourceId]
   )
   const updateResource = useCallback(() => {

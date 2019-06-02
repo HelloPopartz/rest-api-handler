@@ -1,6 +1,17 @@
 import { mapObject } from './utils/object'
-import { CacheActionType, CacheStore } from './store'
+import { CacheStore } from './store'
 import { HttpClient } from './httpClient'
+import { Subscriptions } from './subscriptions'
+import { ResourceConfig } from './createResource'
+
+export type RoutesConfigOptions<
+  ResourceType,
+  ExtraRoutes extends RouteMap<ResourceType>,
+  HttpClientOptions
+> = {
+  httpClient: HttpClient<HttpClientOptions>
+  extraRoutes?: ExtraRoutes
+}
 
 export enum RouteMethod {
   get = 'GET',
@@ -11,13 +22,14 @@ export enum RouteMethod {
 }
 
 export type RouteData<HttpClientOptions = any> = {
+  resourceId?: any
   body?: any
   routeParams?: any[]
   queryParams?: Object
   config?: HttpClientOptions
 }
 
-export interface RouteInheritableOptions {
+export interface RouteInheritableOptions<ResourceType> {
   entityUrl: string
 }
 
@@ -25,7 +37,7 @@ export interface RouteOptions<
   ResourceType,
   TransformRequestFunc extends (...args: any) => RouteData = () => {},
   DataType extends 'item' | 'list' = 'item'
-> extends Partial<RouteInheritableOptions> {
+> extends Partial<RouteInheritableOptions<ResourceType>> {
   handler: TransformRequestFunc extends () => {}
     ? undefined
     : TransformRequestFunc
@@ -36,7 +48,6 @@ export interface RouteOptions<
     requestData: RouteData
   ) => DataType extends 'list' ? ResourceType[] : ResourceType
   method: RouteMethod
-  cacheAction?: CacheActionType
 }
 
 export type RouteMap<ResourceType> = {
@@ -53,20 +64,6 @@ export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
   >
 }
 
-function saveInStore<ResourceType>(
-  { delete: deleteHandler, set, getResourceId }: CacheStore<ResourceType>,
-  { action, data }: { action: CacheActionType; data: ResourceType }
-) {
-  switch (action) {
-    case CacheActionType.delete:
-      deleteHandler(getResourceId(data))
-      break
-    case CacheActionType.set:
-      set(data, getResourceId(data))
-      break
-  }
-}
-
 export function generateHandlers<
   ResourceType,
   Routes extends RouteMap<ResourceType>,
@@ -76,52 +73,96 @@ export function generateHandlers<
   httpClient,
   inheritableRouteConfig,
   store,
+  subscriptionMap,
+  getResourceId,
 }: {
   routes: Routes
   httpClient: HttpClient<HttpClientOptions>
-  inheritableRouteConfig: RouteInheritableOptions
+  inheritableRouteConfig: RouteInheritableOptions<ResourceType>
   store: CacheStore<ResourceType>
+  subscriptionMap: Subscriptions<ResourceType>
+  getResourceId: ResourceConfig<ResourceType>['getResourceId']
 }): Handlers<ResourceType, Routes> {
   const mapRouteToHandler = <
     RouteConfig extends RouteOptions<ResourceType, any, any>
-  >({
-    handler,
-    transformResponse,
-    entityUrl = inheritableRouteConfig.entityUrl,
-    method,
-    dataType = 'item',
-    resource,
-    cacheAction,
-  }: RouteConfig) => {
+  >(
+    route: RouteConfig,
+    routeName: string
+  ) => {
+    const {
+      handler,
+      transformResponse,
+      entityUrl = inheritableRouteConfig.entityUrl,
+      method,
+      dataType = 'item',
+      resource,
+    } = route
+    const routeWithName = { ...route, name: routeName }
     const apiHandler = async (
       ...params: Parameters<NonNullable<typeof handler>>
     ) => {
-      let requestData = {}
+      let requestData: RouteData = {}
       // Parse request data
       if (handler) {
         requestData = handler(...params)
       }
-      // Make api call
-      const data = await httpClient({
-        method,
-        resource,
-        entityUrl,
-        ...requestData,
+      const { resourceId } = requestData
+      subscriptionMap.emit(resourceId, {
+        routeData: routeWithName,
+        state: 'request',
+        id: resourceId,
       })
-      const parsedData = transformResponse
-        ? transformResponse(data, requestData)
-        : data
-      const storeActive = store.active && !!store.getResourceId
-      if (storeActive && !!cacheAction) {
-        if (dataType === 'list') {
-          parsedData.forEach((data: ResourceType) =>
-            saveInStore(store, { action: cacheAction, data })
-          )
-        } else {
-          saveInStore(store, { action: cacheAction, data: parsedData })
+      // Make api call
+      try {
+        const responseData = await httpClient({
+          method,
+          resource,
+          entityUrl,
+          ...requestData,
+        })
+        const parsedData = transformResponse
+          ? transformResponse(responseData, requestData)
+          : responseData
+        const storeActive = !!store && store.active
+        if (storeActive) {
+          const { resourceId } = requestData
+          if (dataType === 'list') {
+            parsedData.forEach((data: ResourceType) =>
+              store.update(getResourceId(data), data)
+            )
+          } else {
+            store.update(getResourceId(parsedData) || resourceId, parsedData)
+          }
         }
+        if (dataType === 'list') {
+          parsedData.forEach((data: ResourceType) => {
+            const id = getResourceId(data) || resourceId
+            subscriptionMap.emit(id, {
+              routeData: routeWithName,
+              state: 'success',
+              id,
+              data,
+            })
+          })
+        } else {
+          const id = getResourceId(parsedData) || resourceId
+          subscriptionMap.emit(id, {
+            routeData: routeWithName,
+            state: 'success',
+            id,
+            data: parsedData,
+          })
+        }
+
+        return parsedData
+      } catch (e) {
+        subscriptionMap.emit(resourceId, {
+          routeData: routeWithName,
+          state: 'failure',
+          id: resourceId,
+        })
+        throw e
       }
-      return parsedData
     }
     return apiHandler
   }
@@ -161,26 +202,22 @@ export function generateDefaultRoutes<ResourceType>(): {
     list: {
       handler: undefined,
       method: RouteMethod.get,
-      cacheAction: CacheActionType.set,
       dataType: 'list',
     },
     create: {
       method: RouteMethod.post,
-      cacheAction: CacheActionType.set,
       handler: (data: ResourceType) => ({
         body: data,
       }),
     },
     get: {
       method: RouteMethod.get,
-      cacheAction: CacheActionType.set,
-      handler: (id: string | number) => ({
+      handler: (id: string) => ({
         routeParams: [id.toString()],
       }),
     },
     patch: {
       method: RouteMethod.patch,
-      cacheAction: CacheActionType.set,
       handler: (id: string | number, data: Partial<ResourceType>) => ({
         routeParams: [id.toString()],
         body: data,
@@ -188,7 +225,6 @@ export function generateDefaultRoutes<ResourceType>(): {
     },
     put: {
       method: RouteMethod.put,
-      cacheAction: CacheActionType.set,
       handler: (id: string | number, data: ResourceType) => ({
         routeParams: [id.toString()],
         body: data,
@@ -196,7 +232,6 @@ export function generateDefaultRoutes<ResourceType>(): {
     },
     delete: {
       method: RouteMethod.delete,
-      cacheAction: CacheActionType.delete,
       handler: (id: string | number) => ({
         routeParams: [id.toString()],
       }),
@@ -212,15 +247,21 @@ export function createHandlers<
   {
     httpClient,
     ...inheritableRouteConfig
-  }: { httpClient: HttpClient<HttpClientOptions> } & RouteInheritableOptions,
+  }: { httpClient: HttpClient<HttpClientOptions> } & RouteInheritableOptions<
+    ResourceType
+  >,
   routes: Routes,
-  store: CacheStore<ResourceType>
+  getResourceId: ResourceConfig<ResourceType>['getResourceId'],
+  store: CacheStore<ResourceType>,
+  subscriptionMap: Subscriptions<ResourceType>
 ) {
   const handlers = generateHandlers<ResourceType, Routes, HttpClientOptions>({
     routes,
     httpClient,
     inheritableRouteConfig,
     store,
+    subscriptionMap,
+    getResourceId,
   })
   return handlers
 }

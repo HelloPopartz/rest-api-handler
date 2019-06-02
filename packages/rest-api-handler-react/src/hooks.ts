@@ -1,4 +1,4 @@
-import { CacheStore } from '@rest-api-handler/core'
+import { RestApiResource } from '@rest-api-handler/core'
 import { useEffect, useReducer, Reducer } from 'react'
 
 type UseRestApiHandler<ResourceType> = {
@@ -51,11 +51,15 @@ const dataFetchReducer = <ResourceType>(
   }
 }
 
-export function useRestResource<ResourceType>(
-  apiCall: () => Promise<ResourceType>,
-  store?: CacheStore<ResourceType>,
+export function useRestResource<
+  ResourceType,
+  RestResource extends RestApiResource<ResourceType, any>
+>(
+  resource: RestResource,
+  apiCall: (apiHandlers: RestResource['api']) => Promise<ResourceType>,
   depArray: any[] = []
 ): UseRestApiHandler<ResourceType> {
+  const { subscriptions } = resource
   const [state, dispatch] = useReducer<UseRestResourceReducer<ResourceType>>(
     dataFetchReducer,
     {
@@ -72,7 +76,7 @@ export function useRestResource<ResourceType>(
       dispatch({ type: 'FETCH_INIT' })
 
       try {
-        const response = await apiCall()
+        const response = await apiCall(resource.api)
         if (!didCancel) {
           dispatch({ type: 'FETCH_SUCCESS', payload: response })
         }
@@ -90,17 +94,26 @@ export function useRestResource<ResourceType>(
   }, depArray)
 
   useEffect(() => {
-    if (!store || !state.data) {
+    if (!state.data) {
       return
     }
-    const subId = store.subscribe(
-      store.getResourceId(state.data),
-      ({ data }) => {
-        dispatch({ type: 'CACHE_UPDATE', payload: data })
+    const subscriptionId = subscriptions.subscribe(
+      resource.getResourceId(state.data),
+      ({ data, state: actionState }) => {
+        switch (actionState) {
+          case 'request':
+            dispatch({ type: 'FETCH_INIT' })
+            break
+          case 'success':
+            dispatch({ type: 'FETCH_SUCCESS', payload: data })
+            break
+          case 'failure':
+            dispatch({ type: 'FETCH_SUCCESS', payload: state.data })
+        }
       }
     )
     return () => {
-      store.unsubscribe(subId)
+      subscriptions.unsubscribe(subscriptionId)
     }
   }, [state.data])
 

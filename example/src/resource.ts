@@ -8,17 +8,16 @@ type Todo = {
   completed: boolean
 }
 
-const config = {
+const resourceConfig = {
   entityUrl: 'https://jsonplaceholder.typicode.com/todos',
-  httpClient: defaultHttpClient(),
-}
-
-const storeConfig = {
-  active: true,
   getResourceId: (data: Todo) => data.id.toString(),
 }
 
+const routeConfig = {
+  httpClient: defaultHttpClient(),
+}
+
 export const resource = createResource<Todo, {}, FetchConfig>(
-  config,
-  storeConfig
+  resourceConfig,
+  routeConfig
 )

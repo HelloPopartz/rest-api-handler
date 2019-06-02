@@ -1,9 +1,10 @@
-import { RouteOptions, RouteData, RouteInheritableOptions } from './handlers'
+import { RouteOptions, RouteData } from './handlers'
 import queryString from 'query-string'
 import { isEmpty } from './utils/object'
 
-export type HttpClientRequestData<HttpClientOptions> = RouteInheritableOptions &
-  Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
+export type HttpClientRequestData<HttpClientOptions> = {
+  entityUrl: string
+} & Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
   RouteData<HttpClientOptions>
 
 export type HttpClient<HttpClientOptions> = (
@@ -53,15 +54,6 @@ export function defaultHttpClient(
     queryParams,
     config,
   }: HttpClientRequestData<FetchConfig>) => {
-    console.log(
-      entityUrl,
-      method,
-      resource,
-      routeParams,
-      body,
-      queryParams,
-      config
-    )
     // Read Fetch API
     const url = generateUrl({ entityUrl, resource, routeParams, queryParams })
     const response: FetchResponse = await window.fetch(url, {

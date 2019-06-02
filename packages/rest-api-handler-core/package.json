@@ -1,7 +1,8 @@
 {
   "name": "@rest-api-handler/core",
   "version": "1.0.0",
-  "main": "dist/index.ts",
+  "source": "src/index.ts",
+  "main": "dist/index.js",
   "module": "dist/index.es.js",
   "files": [
     "dist"
@@ -15,8 +16,8 @@
     "flexible"
   ],
   "scripts": {
-    "build": "rollup -c",
-    "watch": "rollup -cw",
+    "build": "microbundle",
+    "watch": "microbundle watch",
     "test": "jest --config jest.config.json --env=node",
     "format": "prettier --write \"{src,__{tests,mocks}__}/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json"

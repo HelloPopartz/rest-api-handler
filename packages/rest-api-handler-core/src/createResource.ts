@@ -1,25 +1,13 @@
 import {
-  RouteInheritableOptions,
   createHandlers,
   Handlers,
   generateDefaultRoutes,
+  RoutesConfigOptions,
+  RouteInheritableOptions,
 } from './handlers'
 import { createStore, CacheStore } from './store'
 import { RouteMap } from './handlers'
-import { HttpClient } from './httpClient'
-
-export type RoutesConfigOptions<
-  ResourceType,
-  ExtraRoutes extends RouteMap<ResourceType>,
-  HttpClientOptions
-> = RouteInheritableOptions & {
-  httpClient: HttpClient<HttpClientOptions>
-  extraRoutes?: ExtraRoutes
-}
-export interface StoreConfigOptions<ResourceType> {
-  active: boolean
-  getResourceId: (data: ResourceType) => string
-}
+import { Subscriptions, createSubscriptionMap } from './subscriptions'
 
 export interface RestApiResource<
   ResourceType,
@@ -27,6 +15,15 @@ export interface RestApiResource<
 > {
   api: Handlers<ResourceType, Routes>
   store: CacheStore<ResourceType>
+  subscriptions: Subscriptions<ResourceType>
+  getResourceId: ResourceConfig<ResourceType>['getResourceId']
+}
+
+export type ResourceConfig<ResourceType> = RouteInheritableOptions<
+  ResourceType
+> & {
+  storeActive?: boolean
+  getResourceId: (data: ResourceType) => string
 }
 
 export function createResource<
@@ -34,19 +31,29 @@ export function createResource<
   ExtraRoutes extends RouteMap<ResourceType>,
   HttpClientOptions = any
 >(
+  { entityUrl, storeActive, getResourceId }: ResourceConfig<ResourceType>,
   {
     extraRoutes,
     ...routeConfig
-  }: RoutesConfigOptions<ResourceType, ExtraRoutes, HttpClientOptions>,
-  storeConfig?: StoreConfigOptions<ResourceType>
+  }: RoutesConfigOptions<ResourceType, ExtraRoutes, HttpClientOptions>
 ) {
   const finalRoutes = {
     ...generateDefaultRoutes<ResourceType>(),
     ...extraRoutes,
   }
+  const storeConfig = { active: storeActive !== undefined ? storeActive : true }
   const store = createStore<ResourceType>(storeConfig)
+  const subscriptions = createSubscriptionMap<ResourceType>()
   return {
-    api: createHandlers(routeConfig, finalRoutes, store),
+    api: createHandlers(
+      { ...routeConfig, entityUrl },
+      finalRoutes,
+      getResourceId,
+      store,
+      subscriptions
+    ),
     store,
+    subscriptions,
+    getResourceId,
   } as RestApiResource<ResourceType, typeof finalRoutes>
 }
