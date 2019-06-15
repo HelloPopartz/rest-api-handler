@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/foundernest-ui-core" },
+    { "path": "./packages/foundernest-ui-theme" },
+    { "path": "./packages/foundernest-ui-utils" },
+    { "path": "./packages/foundernest-ui-formik" },
+    { "path": "./docs/" }
+  ]
+}

@@ -1,5 +1,6 @@
-import { RouteOptions, RouteData } from './handlers'
 import queryString from 'query-string'
+
+import { RouteOptions, RouteData } from './handlers.types'
 import { isEmpty } from './utils/object'
 
 export type HttpClientRequestData<HttpClientOptions> = {
@@ -18,12 +19,12 @@ export function generateUrl({
   entityUrl,
   resource = '',
   routeParams = [],
-  queryParams = {},
+  queryParams = {}
 }: {
   entityUrl: string
   resource?: string
   routeParams?: (string | number)[]
-  queryParams?: Object
+  queryParams?: Record<string, any>
 }) {
   let url = entityUrl.replace(/\/$/, '')
   if (resource) {
@@ -52,7 +53,7 @@ export function defaultHttpClient(
     routeParams,
     body,
     queryParams,
-    config,
+    config
   }: HttpClientRequestData<FetchConfig>) => {
     // Read Fetch API
     const url = generateUrl({ entityUrl, resource, routeParams, queryParams })
@@ -60,7 +61,7 @@ export function defaultHttpClient(
       ...extraConfig,
       method,
       body: JSON.stringify(body),
-      ...config,
+      ...config
     } as any)
     return response.json()
   }

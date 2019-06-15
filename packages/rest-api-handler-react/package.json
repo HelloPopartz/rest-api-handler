@@ -20,7 +20,7 @@
     "watch": "microbundle watch",
     "test": "jest --config jest.config.json --env=node",
     "format": "prettier --write \"{src,__{tests,mocks}__}/**/*.ts\" \"src/**/*.js\"",
-    "lint": "tslint -p tsconfig.json"
+    "lint": "eslint 'src/**/*.ts{,x}' --fix"
   },
   "repository": {
     "type": "git",

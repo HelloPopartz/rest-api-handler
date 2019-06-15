@@ -1,12 +1,12 @@
+import { createHandlers, generateDefaultRoutes } from './handlers'
+import { defaultStore, CacheStore } from './store'
 import {
-  createHandlers,
+  RouteMap,
   Handlers,
-  generateDefaultRoutes,
   RoutesConfigOptions,
   RouteInheritableOptions,
-} from './handlers'
-import { createStore, CacheStore } from './store'
-import { RouteMap } from './handlers'
+  GetResourceId
+} from './handlers.types'
 import { Subscriptions, createSubscriptionMap } from './subscriptions'
 
 export interface RestApiResource<
@@ -16,14 +16,15 @@ export interface RestApiResource<
   api: Handlers<ResourceType, Routes>
   store: CacheStore<ResourceType>
   subscriptions: Subscriptions<ResourceType>
-  getResourceId: ResourceConfig<ResourceType>['getResourceId']
+  getResourceId: GetResourceId<ResourceType>
 }
 
 export type ResourceConfig<ResourceType> = RouteInheritableOptions<
   ResourceType
 > & {
-  storeActive?: boolean
-  getResourceId: (data: ResourceType) => string
+  withStore?: boolean
+  customStore?: CacheStore<ResourceType>
+  getResourceId?: GetResourceId<ResourceType>
 }
 
 export function createResource<
@@ -31,7 +32,13 @@ export function createResource<
   ExtraRoutes extends RouteMap<ResourceType>,
   HttpClientOptions = any
 >(
-  { entityUrl, storeActive, getResourceId }: ResourceConfig<ResourceType>,
+  {
+    entityUrl,
+    withStore,
+    customStore,
+    getResourceId = (data: ResourceType) =>
+      (data as any).id ? (data as any).id.toString() : undefined
+  }: ResourceConfig<ResourceType>,
   {
     extraRoutes,
     ...routeConfig
@@ -39,21 +46,25 @@ export function createResource<
 ) {
   const finalRoutes = {
     ...generateDefaultRoutes<ResourceType>(),
-    ...extraRoutes,
+    ...extraRoutes
   }
-  const storeConfig = { active: storeActive !== undefined ? storeActive : true }
-  const store = createStore<ResourceType>(storeConfig)
+  let store: CacheStore<ResourceType> | undefined
+  if (withStore && !customStore) {
+    store = defaultStore<ResourceType>()
+  } else if (!!customStore) {
+    store = customStore
+  }
   const subscriptions = createSubscriptionMap<ResourceType>()
   return {
     api: createHandlers(
       { ...routeConfig, entityUrl },
       finalRoutes,
       getResourceId,
-      store,
-      subscriptions
+      subscriptions,
+      store
     ),
-    store,
     subscriptions,
     getResourceId,
+    store
   } as RestApiResource<ResourceType, typeof finalRoutes>
 }

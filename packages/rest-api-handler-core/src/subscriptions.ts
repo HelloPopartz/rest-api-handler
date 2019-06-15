@@ -1,4 +1,4 @@
-import { RouteOptions } from './handlers'
+import { RouteOptions } from './handlers.types'
 
 export type EmitArguments<ResourceType> = {
   routeData: RouteOptions<ResourceType> & { name: string }
@@ -27,9 +27,7 @@ export function createSubscriptionMap<ResourceType>(): Subscriptions<
   // Store data
   let subId = 0
   let subscriptions = {} as SubscriptionMap<ResourceType>
-  let globalSubscription:
-    | SubscribeCallback<ResourceType>
-    | undefined = undefined
+  let globalSubscription: SubscribeCallback<ResourceType> | undefined
 
   // Handlers
   const clear = () => {
@@ -48,7 +46,7 @@ export function createSubscriptionMap<ResourceType>(): Subscriptions<
   }
 
   const subscribe = (id: string, callback: SubscribeCallback<ResourceType>) => {
-    if ('all') {
+    if (id === 'all') {
       globalSubscription = callback
       return 'all'
     }
@@ -78,6 +76,6 @@ export function createSubscriptionMap<ResourceType>(): Subscriptions<
     clear,
     subscribe,
     unsubscribe,
-    emit,
+    emit
   }
 }

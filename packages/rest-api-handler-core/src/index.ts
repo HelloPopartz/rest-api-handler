@@ -1,3 +1,3 @@
 export * from './createResource'
-export * from './handlers'
+export * from './handlers.types'
 export * from './httpClient'

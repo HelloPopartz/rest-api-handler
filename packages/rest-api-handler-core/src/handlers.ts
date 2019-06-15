@@ -2,69 +2,17 @@ import { mapObject } from './utils/object'
 import { CacheStore } from './store'
 import { HttpClient } from './httpClient'
 import { Subscriptions } from './subscriptions'
-import { ResourceConfig } from './createResource'
+import { emitWarning, WarningCodes } from './warningManager'
+import {
+  RouteInheritableOptions,
+  GetResourceId,
+  RouteMap,
+  RouteOptions,
+  Handlers,
+  RouteMethod
+} from './handlers.types'
 
-export type RoutesConfigOptions<
-  ResourceType,
-  ExtraRoutes extends RouteMap<ResourceType>,
-  HttpClientOptions
-> = {
-  httpClient: HttpClient<HttpClientOptions>
-  extraRoutes?: ExtraRoutes
-}
-
-export enum RouteMethod {
-  get = 'GET',
-  post = 'POST',
-  put = 'PUT',
-  patch = 'PATCH',
-  delete = 'DELETE',
-}
-
-export type RouteData<HttpClientOptions = any> = {
-  resourceId?: any
-  body?: any
-  routeParams?: any[]
-  queryParams?: Object
-  config?: HttpClientOptions
-}
-
-export interface RouteInheritableOptions<ResourceType> {
-  entityUrl: string
-}
-
-export interface RouteOptions<
-  ResourceType,
-  TransformRequestFunc extends (...args: any) => RouteData = () => {},
-  DataType extends 'item' | 'list' = 'item'
-> extends Partial<RouteInheritableOptions<ResourceType>> {
-  handler: TransformRequestFunc extends () => {}
-    ? undefined
-    : TransformRequestFunc
-  resource?: string
-  dataType?: DataType
-  transformResponse?: (
-    response: any,
-    requestData: RouteData
-  ) => DataType extends 'list' ? ResourceType[] : ResourceType
-  method: RouteMethod
-}
-
-export type RouteMap<ResourceType> = {
-  [K: string]: RouteOptions<ResourceType, any, any>
-}
-
-export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
-  [P in keyof Routes]: (
-    ...params: Routes[P]['handler'] extends undefined
-      ? []
-      : Parameters<NonNullable<Routes[P]['handler']>>
-  ) => Promise<
-    Routes[P]['dataType'] extends 'list' ? ResourceType[] : ResourceType
-  >
-}
-
-export function generateHandlers<
+function generateHandlers<
   ResourceType,
   Routes extends RouteMap<ResourceType>,
   HttpClientOptions
@@ -74,14 +22,14 @@ export function generateHandlers<
   inheritableRouteConfig,
   store,
   subscriptionMap,
-  getResourceId,
+  getResourceId
 }: {
   routes: Routes
   httpClient: HttpClient<HttpClientOptions>
   inheritableRouteConfig: RouteInheritableOptions<ResourceType>
-  store: CacheStore<ResourceType>
   subscriptionMap: Subscriptions<ResourceType>
-  getResourceId: ResourceConfig<ResourceType>['getResourceId']
+  getResourceId: GetResourceId<ResourceType>
+  store?: CacheStore<ResourceType>
 }): Handlers<ResourceType, Routes> {
   const mapRouteToHandler = <
     RouteConfig extends RouteOptions<ResourceType, any, any>
@@ -90,27 +38,25 @@ export function generateHandlers<
     routeName: string
   ) => {
     const {
-      handler,
+      handler = () => {},
       transformResponse,
+      transformData = inheritableRouteConfig.transformData,
       entityUrl = inheritableRouteConfig.entityUrl,
       method,
       dataType = 'item',
-      resource,
+      resource
     } = route
     const routeWithName = { ...route, name: routeName }
     const apiHandler = async (
       ...params: Parameters<NonNullable<typeof handler>>
     ) => {
-      let requestData: RouteData = {}
       // Parse request data
-      if (handler) {
-        requestData = handler(...params)
-      }
+      const requestData = handler(...params)
       const { resourceId } = requestData
       subscriptionMap.emit(resourceId, {
         routeData: routeWithName,
         state: 'request',
-        id: resourceId,
+        id: resourceId
       })
       // Make api call
       try {
@@ -118,48 +64,53 @@ export function generateHandlers<
           method,
           resource,
           entityUrl,
-          ...requestData,
+          ...requestData
         })
-        const parsedData = transformResponse
+        // First transform the response to check if the data we need is nested
+        // For example, when the resources are under the key "results" in a list
+        let parsedResponse = transformResponse
           ? transformResponse(responseData, requestData)
           : responseData
-        const storeActive = !!store && store.active
-        if (storeActive) {
-          const { resourceId } = requestData
-          if (dataType === 'list') {
-            parsedData.forEach((data: ResourceType) =>
-              store.update(getResourceId(data), data)
-            )
-          } else {
-            store.update(getResourceId(parsedData) || resourceId, parsedData)
-          }
+        // Transform the items of the response into id and data
+        if (dataType !== 'list' && !Array.isArray(parsedResponse)) {
+          parsedResponse = [parsedResponse]
         }
-        if (dataType === 'list') {
-          parsedData.forEach((data: ResourceType) => {
-            const id = getResourceId(data) || resourceId
+        const result = parsedResponse.map((data: ResourceType) => {
+          let parsedData = data
+          if (transformData) {
+            parsedData = transformData(data)
+          }
+          const id = getResourceId(parsedData) || resourceId
+          let validId = true
+          if (id === null || id === undefined) {
+            emitWarning(WarningCodes.noId)
+            validId = false
+          } else if (typeof id !== 'string') {
+            emitWarning(WarningCodes.invalidIdType, typeof id)
+            validId = false
+          }
+          // Update store
+          if (store && validId) {
+            store.update(id, parsedData)
+          }
+          // Emit subscription
+          if (validId) {
             subscriptionMap.emit(id, {
               routeData: routeWithName,
               state: 'success',
               id,
-              data,
+              data: parsedData
             })
-          })
-        } else {
-          const id = getResourceId(parsedData) || resourceId
-          subscriptionMap.emit(id, {
-            routeData: routeWithName,
-            state: 'success',
-            id,
-            data: parsedData,
-          })
-        }
-
-        return parsedData
+          }
+          // Return the data
+          return parsedData
+        })
+        return result.length === 1 ? result[0] : result
       } catch (e) {
         subscriptionMap.emit(resourceId, {
           routeData: routeWithName,
           state: 'failure',
-          id: resourceId,
+          id: resourceId
         })
         throw e
       }
@@ -200,42 +151,49 @@ export function generateDefaultRoutes<ResourceType>(): {
 } {
   return {
     list: {
-      handler: undefined,
       method: RouteMethod.get,
       dataType: 'list',
+      transformResponse: (response: any) => {
+        if (!!response && Array.isArray(response)) {
+          return response
+        } else if (!!response.results && Array.isArray(response.results)) {
+          return response.results
+        }
+        return []
+      }
     },
     create: {
       method: RouteMethod.post,
       handler: (data: ResourceType) => ({
-        body: data,
-      }),
+        body: data
+      })
     },
     get: {
       method: RouteMethod.get,
       handler: (id: string) => ({
-        routeParams: [id.toString()],
-      }),
+        routeParams: [id.toString()]
+      })
     },
     patch: {
       method: RouteMethod.patch,
       handler: (id: string | number, data: Partial<ResourceType>) => ({
         routeParams: [id.toString()],
-        body: data,
-      }),
+        body: data
+      })
     },
     put: {
       method: RouteMethod.put,
       handler: (id: string | number, data: ResourceType) => ({
         routeParams: [id.toString()],
-        body: data,
-      }),
+        body: data
+      })
     },
     delete: {
       method: RouteMethod.delete,
       handler: (id: string | number) => ({
-        routeParams: [id.toString()],
-      }),
-    },
+        routeParams: [id.toString()]
+      })
+    }
   }
 }
 
@@ -251,9 +209,9 @@ export function createHandlers<
     ResourceType
   >,
   routes: Routes,
-  getResourceId: ResourceConfig<ResourceType>['getResourceId'],
-  store: CacheStore<ResourceType>,
-  subscriptionMap: Subscriptions<ResourceType>
+  getResourceId: GetResourceId<ResourceType>,
+  subscriptionMap: Subscriptions<ResourceType>,
+  store?: CacheStore<ResourceType>
 ) {
   const handlers = generateHandlers<ResourceType, Routes, HttpClientOptions>({
     routes,
@@ -261,7 +219,7 @@ export function createHandlers<
     inheritableRouteConfig,
     store,
     subscriptionMap,
-    getResourceId,
+    getResourceId
   })
   return handlers
 }
