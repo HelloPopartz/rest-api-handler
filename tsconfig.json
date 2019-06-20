@@ -1,10 +1,11 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/foundernest-ui-core" },
-    { "path": "./packages/foundernest-ui-theme" },
-    { "path": "./packages/foundernest-ui-utils" },
-    { "path": "./packages/foundernest-ui-formik" },
-    { "path": "./docs/" }
+    { "path": "./packages/rest-api-handler-core" },
+    { "path": "./packages/rest-api-handler-axios-http-client" },
+    { "path": "./packages/rest-api-handler-fetch-http-client" },
+    { "path": "./packages/rest-api-handler-react" },
+    { "path": "./packages/rest-api-handler-redux" },
+    { "path": "./example/" }
   ]
 }

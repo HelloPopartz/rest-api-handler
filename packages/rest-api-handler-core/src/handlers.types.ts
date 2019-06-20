@@ -1,4 +1,4 @@
-import { HttpClient } from './httpClient'
+import { HttpClient } from './httpClient.types'
 
 export type GetResourceId<ResourceType> = (data: ResourceType) => string
 
@@ -48,6 +48,8 @@ export interface RouteOptions<
   ) => DataType extends 'list' ? any[] : any
   method: RouteMethod
 }
+
+export type RouteDataWithName = RouteOptions<any, any, any> & { name: string }
 
 export type RouteMap<ResourceType> = {
   [K: string]: RouteOptions<ResourceType, any, any>

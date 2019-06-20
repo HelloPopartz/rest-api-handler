@@ -1,1 +1,2 @@
-export { useRestResource } from './hooks'
+export { useApiResource } from './useApiResource'
+export { useStoredResource } from './useStoredResource'

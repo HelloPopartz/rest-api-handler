@@ -1,5 +1,5 @@
-import { createHandlers, generateDefaultRoutes } from './handlers'
-import { defaultStore, CacheStore } from './store'
+import { createHandlers, defaultRoutes } from './handlers'
+import { CacheStore, createStore } from './store'
 import {
   RouteMap,
   Handlers,
@@ -7,7 +7,6 @@ import {
   RouteInheritableOptions,
   GetResourceId
 } from './handlers.types'
-import { Subscriptions, createSubscriptionMap } from './subscriptions'
 
 export interface RestApiResource<
   ResourceType,
@@ -15,14 +14,12 @@ export interface RestApiResource<
 > {
   api: Handlers<ResourceType, Routes>
   store: CacheStore<ResourceType>
-  subscriptions: Subscriptions<ResourceType>
   getResourceId: GetResourceId<ResourceType>
 }
 
 export type ResourceConfig<ResourceType> = RouteInheritableOptions<
   ResourceType
 > & {
-  withStore?: boolean
   customStore?: CacheStore<ResourceType>
   getResourceId?: GetResourceId<ResourceType>
 }
@@ -34,7 +31,6 @@ export function createResource<
 >(
   {
     entityUrl,
-    withStore,
     customStore,
     getResourceId = (data: ResourceType) =>
       (data as any).id ? (data as any).id.toString() : undefined
@@ -45,25 +41,17 @@ export function createResource<
   }: RoutesConfigOptions<ResourceType, ExtraRoutes, HttpClientOptions>
 ) {
   const finalRoutes = {
-    ...generateDefaultRoutes<ResourceType>(),
+    ...defaultRoutes<ResourceType>(),
     ...extraRoutes
   }
-  let store: CacheStore<ResourceType> | undefined
-  if (withStore && !customStore) {
-    store = defaultStore<ResourceType>()
-  } else if (!!customStore) {
-    store = customStore
-  }
-  const subscriptions = createSubscriptionMap<ResourceType>()
+  const store = customStore || createStore<ResourceType>()
   return {
     api: createHandlers(
       { ...routeConfig, entityUrl },
       finalRoutes,
       getResourceId,
-      subscriptions,
       store
     ),
-    subscriptions,
     getResourceId,
     store
   } as RestApiResource<ResourceType, typeof finalRoutes>

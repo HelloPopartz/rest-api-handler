@@ -1,21 +1,16 @@
 import queryString from 'query-string'
+import { HttpClient, HttpClientRequestData } from '@rest-api-handler/core'
+import es6Promise from 'es6-promise'
+import 'isomorphic-fetch'
 
-import { RouteOptions, RouteData } from './handlers.types'
 import { isEmpty } from './utils/object'
 
-export type HttpClientRequestData<HttpClientOptions> = {
-  entityUrl: string
-} & Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
-  RouteData<HttpClientOptions>
-
-export type HttpClient<HttpClientOptions> = (
-  requestData: HttpClientRequestData<HttpClientOptions>
-) => Promise<any>
+es6Promise.polyfill()
 
 export type FetchConfig = Partial<Request>
 export type FetchResponse = Response
 
-export function generateUrl({
+function generateUrl({
   entityUrl,
   resource = '',
   routeParams = [],
@@ -43,7 +38,7 @@ export function generateUrl({
   return url
 }
 
-export function defaultHttpClient(
+export function fetchHttpClient(
   extraConfig?: FetchConfig
 ): HttpClient<FetchConfig> {
   return async ({

@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
-import { useRestResource } from '@rest-api-handler/react'
+import { useApiResource } from '@rest-api-handler/react'
 import './App.css'
 import { resource } from './resource'
 import { useCallback } from 'react'
 
 const App: React.FC = () => {
   const [resourceId, setResourceId] = useState(1)
-  const { loading, error, data } = useRestResource(
+  const { loading, error, data } = useApiResource(
     resource,
     resourceApi => resourceApi.get(resourceId),
     [resourceId]
@@ -15,7 +15,7 @@ const App: React.FC = () => {
     resource.api.put(resourceId, {
       ...(data || { userId: 1, id: 1 }),
       completed: !!data ? !data.completed : false,
-      title: 'hello',
+      title: 'hello'
     })
   }, [resourceId, data])
   return (
@@ -25,7 +25,7 @@ const App: React.FC = () => {
         <div
           style={{
             display: 'flex',
-            justifyContent: 'center',
+            justifyContent: 'center'
           }}
         >
           <button
@@ -45,7 +45,7 @@ const App: React.FC = () => {
               textAlign: 'left',
               padding: 32,
               margin: 0,
-              textOverflow: 'ellipsis',
+              textOverflow: 'ellipsis'
             }}
           >
             {error && 'Error'}

@@ -1,16 +1,17 @@
 import { mapObject } from './utils/object'
 import { CacheStore } from './store'
-import { HttpClient } from './httpClient'
-import { Subscriptions } from './subscriptions'
-import { emitWarning, WarningCodes } from './warningManager'
+import { HttpClient } from './httpClient.types'
+import { emitWarning, WarningCodes } from './warning.service'
 import {
   RouteInheritableOptions,
   GetResourceId,
   RouteMap,
   RouteOptions,
   Handlers,
-  RouteMethod
+  RouteMethod,
+  RouteData
 } from './handlers.types'
+import { updateResource } from './store/actions'
 
 function generateHandlers<
   ResourceType,
@@ -21,15 +22,13 @@ function generateHandlers<
   httpClient,
   inheritableRouteConfig,
   store,
-  subscriptionMap,
   getResourceId
 }: {
   routes: Routes
   httpClient: HttpClient<HttpClientOptions>
   inheritableRouteConfig: RouteInheritableOptions<ResourceType>
-  subscriptionMap: Subscriptions<ResourceType>
   getResourceId: GetResourceId<ResourceType>
-  store?: CacheStore<ResourceType>
+  store: CacheStore<ResourceType>
 }): Handlers<ResourceType, Routes> {
   const mapRouteToHandler = <
     RouteConfig extends RouteOptions<ResourceType, any, any>
@@ -53,11 +52,13 @@ function generateHandlers<
       // Parse request data
       const requestData = handler(...params)
       const { resourceId } = requestData
-      subscriptionMap.emit(resourceId, {
-        routeData: routeWithName,
-        state: 'request',
-        id: resourceId
-      })
+      // If we are updating a particular entity, emit an action
+      if (!!resourceId) {
+        store.dispatch(
+          updateResource.request({ routeData: routeWithName, id: resourceId })
+        )
+      }
+
       // Make api call
       try {
         const responseData = await httpClient({
@@ -89,29 +90,30 @@ function generateHandlers<
             emitWarning(WarningCodes.invalidIdType, typeof id)
             validId = false
           }
-          // Update store
-          if (store && validId) {
-            store.update(id, parsedData)
-          }
           // Emit subscription
           if (validId) {
-            subscriptionMap.emit(id, {
-              routeData: routeWithName,
-              state: 'success',
-              id,
-              data: parsedData
-            })
+            store.dispatch(
+              updateResource.success({
+                routeData: routeWithName,
+                id,
+                data: parsedData
+              })
+            )
+          } else {
+            store.dispatch(updateResource.cancel({ routeData: routeWithName }))
           }
           // Return the data
           return parsedData
         })
         return result.length === 1 ? result[0] : result
       } catch (e) {
-        subscriptionMap.emit(resourceId, {
-          routeData: routeWithName,
-          state: 'failure',
-          id: resourceId
-        })
+        store.dispatch(
+          updateResource.failure({
+            routeData: routeWithName,
+            error: e,
+            id: resourceId
+          })
+        )
         throw e
       }
     }
@@ -120,7 +122,7 @@ function generateHandlers<
   return mapObject(routes, mapRouteToHandler) as any
 }
 
-export function generateDefaultRoutes<ResourceType>(): {
+export function defaultRoutes<ResourceType>(): {
   list: RouteOptions<ResourceType, () => {}, 'list'>
   create: RouteOptions<
     ResourceType,
@@ -128,25 +130,29 @@ export function generateDefaultRoutes<ResourceType>(): {
   >
   get: RouteOptions<
     ResourceType,
-    (id: string | number) => { routeParams: [string] }
+    (id: string | number) => { resourceId: string; routeParams: [string] }
   >
   put: RouteOptions<
     ResourceType,
     (
       id: string | number,
       data: ResourceType
-    ) => { routeParams: [string]; body: ResourceType }
+    ) => { resourceId: string; routeParams: [string]; body: ResourceType }
   >
   patch: RouteOptions<
     ResourceType,
     (
       id: string | number,
       data: Partial<ResourceType>
-    ) => { routeParams: [string]; body: Partial<ResourceType> }
+    ) => {
+      resourceId: string
+      routeParams: [string]
+      body: Partial<ResourceType>
+    }
   >
   delete: RouteOptions<
     ResourceType,
-    (id: string | number) => { routeParams: [string] }
+    (id: string | number) => { resourceId: string; routeParams: [string] }
   >
 } {
   return {
@@ -170,29 +176,45 @@ export function generateDefaultRoutes<ResourceType>(): {
     },
     get: {
       method: RouteMethod.get,
-      handler: (id: string) => ({
-        routeParams: [id.toString()]
-      })
+      handler: (id: string | number) => {
+        const parsedId = id.toString()
+        return {
+          resourceId: parsedId,
+          routeParams: [parsedId]
+        }
+      }
     },
     patch: {
       method: RouteMethod.patch,
-      handler: (id: string | number, data: Partial<ResourceType>) => ({
-        routeParams: [id.toString()],
-        body: data
-      })
+      handler: (id: string | number, data: Partial<ResourceType>) => {
+        const parsedId = id.toString()
+        return {
+          resourceId: parsedId,
+          routeParams: [parsedId],
+          body: data
+        }
+      }
     },
     put: {
       method: RouteMethod.put,
-      handler: (id: string | number, data: ResourceType) => ({
-        routeParams: [id.toString()],
-        body: data
-      })
+      handler: (id: string | number, data: ResourceType) => {
+        const parsedId = id.toString()
+        return {
+          resourceId: parsedId,
+          routeParams: [parsedId],
+          body: data
+        }
+      }
     },
     delete: {
       method: RouteMethod.delete,
-      handler: (id: string | number) => ({
-        routeParams: [id.toString()]
-      })
+      handler: (id: string | number) => {
+        const parsedId = id.toString()
+        return {
+          resourceId: parsedId,
+          routeParams: [parsedId]
+        }
+      }
     }
   }
 }
@@ -210,15 +232,13 @@ export function createHandlers<
   >,
   routes: Routes,
   getResourceId: GetResourceId<ResourceType>,
-  subscriptionMap: Subscriptions<ResourceType>,
-  store?: CacheStore<ResourceType>
+  store: CacheStore<ResourceType>
 ) {
   const handlers = generateHandlers<ResourceType, Routes, HttpClientOptions>({
     routes,
     httpClient,
     inheritableRouteConfig,
     store,
-    subscriptionMap,
     getResourceId
   })
   return handlers
