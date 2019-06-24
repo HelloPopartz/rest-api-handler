@@ -21,9 +21,9 @@
     "coveralls": "lerna run test --coverage && cat ./coverage/lcov.info | coveralls",
     "prepare": "lerna run build",
     "prepublishOnly": "lerna run test && lerna run lint",
-    "preversion": "lerna run lint",
-    "version": "lerna run format && git add -A",
-    "postversion": "git push && git push --tags"
+    "lerna-version": "lerna version --no-push --yes",
+    "lerna-upload": "lerna publish from-package",
+    "lerna-publish": "yarn lerna-version && yarn lerna-upload"
   },
   "homepage": "https://github.com/HelloPopartz/rest-api-handler",
   "author": "Ricardo Domínguez Álvarez <r.dominguez.alvarez.dev@gmail.com>",
