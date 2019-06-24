@@ -8,13 +8,17 @@ const App: React.FC = () => {
   const [resourceId, setResourceId] = useState(1)
   const { loading, error, data } = useApiResource(
     resource,
-    resourceApi => resourceApi.get(resourceId),
+    resourceApi => resourceApi.list(),
     [resourceId]
   )
   const updateResource = useCallback(() => {
+    if (!data || !data[0]) {
+      return
+    }
     resource.api.put(resourceId, {
-      ...(data || { userId: 1, id: 1 }),
-      completed: !!data ? !data.completed : false,
+      id: resourceId,
+      userId: 1,
+      completed: false,
       title: 'hello'
     })
   }, [resourceId, data])
@@ -48,7 +52,7 @@ const App: React.FC = () => {
               textOverflow: 'ellipsis'
             }}
           >
-            {error && 'Error'}
+            {error && error.stack}
             {JSON.stringify(data, null, 2)}
           </pre>
         </div>

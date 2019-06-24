@@ -1,8 +1,5 @@
 import { createResource } from '@rest-api-handler/core'
-import {
-  fetchHttpClient,
-  FetchConfig
-} from '@rest-api-handler/fetch-http-client'
+import { fetchHttpClient } from '@rest-api-handler/fetch-http-client'
 
 type Todo = {
   userId: number
@@ -11,16 +8,9 @@ type Todo = {
   completed: boolean
 }
 
-const resourceConfig = {
-  entityUrl: 'https://jsonplaceholder.typicode.com/todos',
-  getResourceId: (data: Todo) => data.id.toString()
-}
-
-const routeConfig = {
-  httpClient: fetchHttpClient()
-}
-
-export const resource = createResource<Todo, {}, FetchConfig>(
-  resourceConfig,
-  routeConfig
+export const resource = createResource<Todo, {}>(
+  'https://jsonplaceholder.typicode.com/todos',
+  fetchHttpClient(),
+  {},
+  { partialUpdate: false }
 )

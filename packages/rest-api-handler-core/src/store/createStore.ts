@@ -1,10 +1,7 @@
 import { RestApiActions } from './actions'
 import { reducer } from './reducer'
 
-export type CacheStoreData<ResourceType> = Record<
-  string,
-  ResourceType | undefined
->
+export type CacheStoreData<ResourceType> = Record<string, ResourceType>
 
 export type CacheStoreDispatch = (action: RestApiActions) => void
 

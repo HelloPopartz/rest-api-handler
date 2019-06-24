@@ -10,10 +10,14 @@ export const reducer = <ResourceType>(
       const { id, data } = action.payload
       return {
         ...state,
-        [id]: {
-          ...state[id],
-          ...data
-        }
+        [id]: data
+      }
+    }
+    case 'UPDATE_RESOURCE_LIST_SUCCESS': {
+      const { data } = action.payload
+      return {
+        ...state,
+        ...(data as Record<string, ResourceType>)
       }
     }
     case 'CLEAR_STORE': {

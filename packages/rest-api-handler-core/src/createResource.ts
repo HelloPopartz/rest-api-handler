@@ -1,58 +1,75 @@
-import { createHandlers, defaultRoutes } from './handlers'
-import { CacheStore, createStore } from './store'
+import { createHandlers, Handlers } from './handlers'
 import {
-  RouteMap,
-  Handlers,
-  RoutesConfigOptions,
-  RouteInheritableOptions,
-  GetResourceId
-} from './handlers.types'
+  CacheStore,
+  createStore,
+  createSelectors,
+  GetIdFromResource
+} from './store'
+import { HttpClient } from './httpClient.types'
+import { generateRoutes } from './routes'
+import { RouteMap } from './routes.types'
 
 export interface RestApiResource<
   ResourceType,
   Routes extends RouteMap<ResourceType>
 > {
   api: Handlers<ResourceType, Routes>
-  store: CacheStore<ResourceType>
-  getResourceId: GetResourceId<ResourceType>
+  subscribe: CacheStore<ResourceType>['subscribe']
+  unsubscribe: CacheStore<ResourceType>['unsubscribe']
+  selectors: {
+    getIdFromResource: GetIdFromResource<ResourceType>
+    getResourceById: (id: string) => ResourceType
+  }
+  config: {
+    routeConfig: Routes
+    store: CacheStore<ResourceType>
+    httpClient: HttpClient<any>
+  }
 }
 
-export type ResourceConfig<ResourceType> = RouteInheritableOptions<
-  ResourceType
-> & {
+export type ResourceConfig<ResourceType> = {
+  partialUpdate?: boolean
+  transformData?: (originalData: any) => ResourceType
   customStore?: CacheStore<ResourceType>
-  getResourceId?: GetResourceId<ResourceType>
+  getIdFromResource?: GetIdFromResource<ResourceType>
 }
 
 export function createResource<
   ResourceType,
-  ExtraRoutes extends RouteMap<ResourceType>,
-  HttpClientOptions = any
+  ExtraRoutes extends RouteMap<ResourceType>
 >(
-  {
-    entityUrl,
-    customStore,
-    getResourceId = (data: ResourceType) =>
-      (data as any).id ? (data as any).id.toString() : undefined
-  }: ResourceConfig<ResourceType>,
-  {
-    extraRoutes,
-    ...routeConfig
-  }: RoutesConfigOptions<ResourceType, ExtraRoutes, HttpClientOptions>
+  entityUrl: string,
+  httpClient: HttpClient<any>,
+  extraRoutes: ExtraRoutes,
+  resourceConfig: ResourceConfig<ResourceType> = {}
 ) {
-  const finalRoutes = {
-    ...defaultRoutes<ResourceType>(),
-    ...extraRoutes
-  }
+  const {
+    partialUpdate = true,
+    customStore,
+    transformData,
+    getIdFromResource = (data: ResourceType) =>
+      (data as any).id ? (data as any).id.toString() : undefined
+  } = resourceConfig
+  const finalRoutes = generateRoutes<ResourceType, ExtraRoutes>(extraRoutes, {
+    partialUpdate,
+    transformData,
+    entityUrl
+  })
   const store = customStore || createStore<ResourceType>()
+  const selectors = createSelectors(store)
+  const api = createHandlers(httpClient, finalRoutes, getIdFromResource, store)
   return {
-    api: createHandlers(
-      { ...routeConfig, entityUrl },
-      finalRoutes,
-      getResourceId,
+    api,
+    subscribe: store.subscribe,
+    unsubscribe: store.unsubscribe,
+    selectors: {
+      ...selectors,
+      getIdFromResource
+    },
+    config: {
+      routeConfig: finalRoutes,
+      httpClient,
       store
-    ),
-    getResourceId,
-    store
+    }
   } as RestApiResource<ResourceType, typeof finalRoutes>
 }

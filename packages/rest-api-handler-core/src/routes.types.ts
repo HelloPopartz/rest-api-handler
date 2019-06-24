@@ -1,16 +1,3 @@
-import { HttpClient } from './httpClient.types'
-
-export type GetResourceId<ResourceType> = (data: ResourceType) => string
-
-export type RoutesConfigOptions<
-  ResourceType,
-  ExtraRoutes extends RouteMap<ResourceType>,
-  HttpClientOptions
-> = {
-  httpClient: HttpClient<HttpClientOptions>
-  extraRoutes?: ExtraRoutes
-}
-
 export enum RouteMethod {
   get = 'GET',
   post = 'POST',
@@ -28,14 +15,17 @@ export type RouteData<HttpClientOptions = any> = {
 }
 
 export interface RouteInheritableOptions<ResourceType> {
+  partialUpdate?: boolean
   entityUrl: string
   transformData?: (originalData: any) => ResourceType
 }
 
+export type RouteDataType = 'item' | 'list' | 'none'
+
 export interface RouteOptions<
   ResourceType,
   TransformRequestFunc extends (...args: any) => RouteData = () => {},
-  DataType extends 'item' | 'list' = 'item'
+  DataType extends RouteDataType = 'item'
 > extends Partial<RouteInheritableOptions<ResourceType>> {
   handler?: TransformRequestFunc extends () => {}
     ? undefined
@@ -45,7 +35,11 @@ export interface RouteOptions<
   transformResponse?: (
     response: any,
     requestData: RouteData
-  ) => DataType extends 'list' ? any[] : any
+  ) => DataType extends 'none'
+    ? any
+    : DataType extends 'list'
+    ? ResourceType[]
+    : ResourceType
   method: RouteMethod
 }
 
@@ -53,14 +47,4 @@ export type RouteDataWithName = RouteOptions<any, any, any> & { name: string }
 
 export type RouteMap<ResourceType> = {
   [K: string]: RouteOptions<ResourceType, any, any>
-}
-
-export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
-  [P in keyof Routes]: (
-    ...params: Routes[P]['handler'] extends undefined
-      ? []
-      : Parameters<NonNullable<Routes[P]['handler']>>
-  ) => Promise<
-    Routes[P]['dataType'] extends 'list' ? ResourceType[] : ResourceType
-  >
 }

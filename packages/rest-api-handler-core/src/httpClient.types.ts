@@ -1,4 +1,4 @@
-import { RouteOptions, RouteData } from './handlers.types'
+import { RouteOptions, RouteData } from './routes.types'
 
 export type HttpClientRequestData<HttpClientOptions> = {
   entityUrl: string
