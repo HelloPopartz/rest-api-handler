@@ -36,7 +36,7 @@ export type ResourceConfig<ResourceType> = {
 
 export function createResource<
   ResourceType,
-  ExtraRoutes extends RouteMap<ResourceType>
+  ExtraRoutes extends RouteMap<ResourceType> = {}
 >(
   entityUrl: string,
   httpClient: HttpClient<any>,
