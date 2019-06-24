@@ -20,7 +20,7 @@
     "run:example": "yarn workspace example start",
     "coveralls": "lerna run test --coverage && cat ./coverage/lcov.info | coveralls",
     "prepare": "lerna run build",
-    "prepublishOnly": "lerna run test && lerna run lint",
+    "prepublishOnly": "lerna run lint",
     "lerna-version": "lerna version --no-push --yes",
     "lerna-upload": "lerna publish from-package --registry http://54.148.160.175:4873",
     "lerna-publish": "yarn lerna-version && yarn lerna-upload"
