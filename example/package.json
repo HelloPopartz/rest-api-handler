@@ -16,8 +16,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "format": "prettier --write \"{src,__{tests,mocks}__}/**/*.ts\" \"src/**/*.js\"",
-    "lint": "tslint -p tsconfig.json"
+    "format": "prettier --write \"{src,__{tests,mocks}__}/**/*.ts\" \"src/**/*.js\""
   },
   "eslintConfig": {
     "extends": "react-app"
