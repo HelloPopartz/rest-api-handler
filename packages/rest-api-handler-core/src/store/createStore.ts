@@ -2,16 +2,20 @@ import { RestApiActionHandlers, createActions } from './actions'
 import { createReducer } from './reducer'
 import { ActionWithPayload } from '../utils/actionTypes'
 
-export type CacheStoreData<ResourceType> = Record<string | number, ResourceType>
+export type CacheStoreData<
+  ResourceType extends { id: string | number }
+> = Record<ResourceType['id'], ResourceType>
 
 export type CacheStoreDispatch = (action: ActionWithPayload<any, any>) => void
 
-export type SubscribeCallback<ResourceType> = (
+export type SubscribeCallback<ResourceType extends { id: string | number }> = (
   state: CacheStoreData<ResourceType>,
   action: ActionWithPayload<any, any>
 ) => void
 
-export type CacheStore<ResourceType> = Readonly<{
+export type CacheStore<
+  ResourceType extends { id: string | number }
+> = Readonly<{
   dispatch: CacheStoreDispatch
   getState: () => CacheStoreData<ResourceType>
   subscribe: (callback: SubscribeCallback<ResourceType>) => string
@@ -19,8 +23,8 @@ export type CacheStore<ResourceType> = Readonly<{
   actions: RestApiActionHandlers
 }>
 
-export function createStore<ResourceType>(
-  initialData: CacheStoreData<ResourceType> = {}
+export function createStore<ResourceType extends { id: string | number }>(
+  initialData?: CacheStoreData<ResourceType>
 ) {
   // Store data
   let uId = 0
@@ -43,7 +47,7 @@ export function createStore<ResourceType>(
 
   const actions = createActions()
   const reducer = createReducer<ResourceType>(actions, initialData)
-  let state = reducer({}, {} as any)
+  let state = reducer({} as any, {} as any)
 
   const getState = () => state
 

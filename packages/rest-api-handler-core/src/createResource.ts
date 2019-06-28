@@ -13,7 +13,7 @@ import { RouteMap } from './routes.types'
 import { createOperations } from './store/operations'
 
 export interface RestApiResource<
-  ResourceType,
+  ResourceType extends { id: string | number },
   Routes extends RouteMap<ResourceType>
 > {
   api: Handlers<ResourceType, Routes>
@@ -31,20 +31,18 @@ export interface RestApiResource<
     httpClient: HttpClient<any>
     partialUpdate: boolean
     transformData: (originalData: any) => ResourceType
-    getIdFromResource: GetIdFromResource<ResourceType>
   }
 }
 
-export type ResourceConfig<ResourceType> = {
+export type ResourceConfig<ResourceType extends { id: string | number }> = {
   partialUpdate?: boolean
   transformData?: (originalData: any) => ResourceType
   customStore?: CacheStore<ResourceType>
-  getIdFromResource?: GetIdFromResource<ResourceType>
   initialData?: CacheStoreData<ResourceType>
 }
 
 export function createResource<
-  ResourceType,
+  ResourceType extends { id: string | number },
   ExtraRoutes extends RouteMap<ResourceType> = {}
 >(
   resourceUrl: string,
@@ -56,9 +54,7 @@ export function createResource<
     partialUpdate = true,
     customStore,
     transformData,
-    initialData,
-    getIdFromResource = (data: ResourceType) =>
-      (data as any).id ? (data as any).id : undefined
+    initialData
   } = resourceConfig
   const finalRoutes = generateRoutes<ResourceType, ExtraRoutes>(extraRoutes, {
     partialUpdate,
@@ -68,25 +64,21 @@ export function createResource<
   })
   const store = customStore || createStore<ResourceType>(initialData)
   const selectors = createSelectors()
-  const api = createHandlers(finalRoutes, getIdFromResource, store)
-  const { forceUpdate } = createOperations(store, getIdFromResource)
+  const api = createHandlers(finalRoutes, selectors.getIdFromResource, store)
+  const { forceUpdate } = createOperations(store, selectors.getIdFromResource)
   return {
     api,
     subscribe: store.subscribe,
     unsubscribe: store.unsubscribe,
     getState: store.getState,
     forceUpdate,
-    selectors: {
-      ...selectors,
-      getIdFromResource
-    },
+    selectors,
     config: {
       routeConfig: finalRoutes,
       httpClient,
       store,
       partialUpdate,
-      transformData,
-      getIdFromResource
+      transformData
     }
   } as RestApiResource<ResourceType, typeof finalRoutes>
 }

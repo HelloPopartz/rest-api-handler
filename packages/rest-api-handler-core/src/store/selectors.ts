@@ -1,18 +1,21 @@
 import { CacheStoreData } from './createStore'
 
-export type GetIdFromResource<ResourceType> = (
+export type GetIdFromResource<ResourceType extends { id: string | number }> = (
   data: ResourceType
-) => string | number
-export type GetResourceById<ResourceType> = (
+) => ResourceType['id']
+export type GetResourceById<ResourceType extends { id: string | number }> = (
   state: CacheStoreData<ResourceType>,
-  id: string | number
+  id: ResourceType['id']
 ) => ResourceType
 
-export function createSelectors<ResourceType>() {
+export function createSelectors<
+  ResourceType extends { id: string | number }
+>() {
   return {
+    getIdFromResource: (data: ResourceType) => data.id,
     getResourceById: (
       state: CacheStoreData<ResourceType>,
-      id: string | number
+      id: ResourceType['id']
     ) => {
       const resource = state[id]
       if (resource === undefined || resource === null) {

@@ -9,7 +9,7 @@ import {
 import { Omit } from './utils/types'
 
 export function generateRoutes<
-  ResourceType,
+  ResourceType extends { id: string | number },
   ExtraRoutes extends RouteMap<ResourceType>
 >(
   routes: ExtraRoutes,
@@ -52,7 +52,7 @@ export function generateRoutes<
   const get = createRoute({
     method: RouteMethod.get,
     dataType: 'item',
-    handler: (id: string | number) => {
+    handler: (id: ResourceType['id']) => {
       const parsedId = id
       return {
         resourceId: parsedId
@@ -62,7 +62,7 @@ export function generateRoutes<
   const patch = createRoute({
     method: RouteMethod.patch,
     dataType: 'item',
-    handler: (id: string | number, data: Partial<ResourceType>) => {
+    handler: (id: ResourceType['id'], data: Partial<ResourceType>) => {
       const parsedId = id
       return {
         resourceId: parsedId,
@@ -73,7 +73,7 @@ export function generateRoutes<
   const put = createRoute({
     method: RouteMethod.put,
     dataType: 'item',
-    handler: (id: string | number, data: ResourceType) => {
+    handler: (id: ResourceType['id'], data: ResourceType) => {
       const parsedId = id
       return {
         resourceId: parsedId,
@@ -84,7 +84,7 @@ export function generateRoutes<
   const deleteApi = createRoute({
     method: RouteMethod.delete,
     dataType: 'none',
-    handler: (id: string | number) => {
+    handler: (id: ResourceType['id']) => {
       const parsedId = id
       return {
         resourceId: parsedId
