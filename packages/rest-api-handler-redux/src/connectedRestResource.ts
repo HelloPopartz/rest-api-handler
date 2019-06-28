@@ -4,18 +4,26 @@ import {
   ResourceConfig,
   HttpClient,
   RestApiResource,
-  RestApiActionHandlers
+  RestApiActionHandlers,
+  GetIdFromResource,
+  GetResourceById
 } from '@rest-api-handler/core'
 import { Reducer } from 'redux'
 
 import { createConnectedStore } from './connectedStore'
 import { Omit } from './utils/types'
 import { EnhancedStore } from './restStoreEnhancer.types'
+import { createSelectors, GetAllResources } from './createSelectors'
 
 export interface ConnectedRestApiResource<
   ResourceType,
   Routes extends RouteMap<ResourceType>
 > extends RestApiResource<ResourceType, Routes> {
+  selectors: {
+    getAllResources: GetAllResources<ResourceType>
+    getIdFromResource: GetIdFromResource<ResourceType>
+    getResourceById: GetResourceById<ResourceType>
+  }
   storeId: string
   actions: RestApiActionHandlers
   reducer: Reducer<Record<string | number, ResourceType>>
@@ -26,7 +34,7 @@ export function createConnectedResource<
   ResourceType,
   ExtraRoutes extends RouteMap<ResourceType> = {}
 >(
-  resourceName: string,
+  storeId: string,
   resourceUrl: string,
   httpClient: HttpClient<any>,
   extraRoutes: ExtraRoutes,
@@ -35,18 +43,25 @@ export function createConnectedResource<
     ...resourceConfig
   }: Omit<ResourceConfig<ResourceType>, 'customStore'> = {}
 ) {
-  const internalStore = createConnectedStore<ResourceType>(
-    resourceName,
-    initialData
+  const internalStore = createConnectedStore<ResourceType>(storeId, initialData)
+  const { selectors, ...restResource } = createResource(
+    resourceUrl,
+    httpClient,
+    extraRoutes,
+    {
+      ...resourceConfig,
+      customStore: internalStore
+    }
   )
-  const restResource = createResource(resourceUrl, httpClient, extraRoutes, {
-    ...resourceConfig,
-    customStore: internalStore
-  })
   const { actions, reducer, injectReduxStore } = internalStore
+  const reduxSelectors = createSelectors(storeId)
   return {
     ...restResource,
-    storeId: resourceName,
+    selectors: {
+      ...reduxSelectors,
+      ...selectors
+    },
+    storeId: storeId,
     actions,
     reducer,
     injectReduxStore
