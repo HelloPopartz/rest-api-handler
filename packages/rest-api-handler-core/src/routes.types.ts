@@ -17,8 +17,8 @@ export type RouteData<HttpClientOptions = any> = {
 }
 
 export interface RouteInheritableOptions<ResourceType> {
-  httpClient: HttpClient<any>
-  resourceUrl: string
+  httpClient?: HttpClient<any>
+  resourceUrl?: string
   partialUpdate?: boolean
   transformData?: (originalData: any) => ResourceType
 }
@@ -46,7 +46,19 @@ export interface RouteOptions<
   method: RouteMethod
 }
 
-export type RouteDataWithName = RouteOptions<any, any, any> & { name: string }
+export type RouteFinalOptions<
+  ResourceType,
+  TransformRequestFunc extends (...args: any) => RouteData = () => {},
+  DataType extends RouteDataType = 'item'
+> = NonNullable<
+  RouteOptions<ResourceType, TransformRequestFunc, DataType>[keyof RouteOptions<
+    ResourceType,
+    TransformRequestFunc,
+    DataType
+  >]
+>
+
+export type RouteDataWithName = RouteData & { name: string }
 
 export type RouteMap<ResourceType> = {
   [K: string]: RouteOptions<ResourceType, any, any>

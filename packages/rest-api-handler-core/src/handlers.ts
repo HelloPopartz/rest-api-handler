@@ -1,7 +1,7 @@
 import { mapObject } from './utils/object'
 import { CacheStore, GetIdFromResource } from './store'
 import { emitWarning, WarningCodes } from './warning.service'
-import { RouteMap, RouteOptions } from './routes.types'
+import { RouteMap, RouteFinalOptions } from './routes.types'
 
 export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
   [P in keyof Routes]: (
@@ -37,7 +37,7 @@ function generateHandlersFromRoutes<
   store: CacheStore<ResourceType>
 }): Handlers<ResourceType, Routes> {
   const mapRouteToHandler = <
-    RouteConfig extends RouteOptions<ResourceType, any, any>
+    RouteConfig extends RouteFinalOptions<ResourceType, any, any>
   >(
     route: RouteConfig,
     routeName: string
@@ -54,13 +54,19 @@ function generateHandlersFromRoutes<
       resource
     } = route
 
-    const routeWithName = { ...route, name: routeName }
     const apiHandler = async (
       ...params: Parameters<NonNullable<typeof handler>>
     ) => {
       // Parse request data
       const requestData = handler(...params) || {}
       const { resourceId } = requestData
+      const routeWithName = {
+        ...requestData,
+        method,
+        resource,
+        resourceUrl,
+        name: routeName
+      }
       // If we are updating a particular entity, emit an action
       if (!!resourceId && dataType !== 'list') {
         dispatch(update.request({ routeData: routeWithName, id: resourceId }))
