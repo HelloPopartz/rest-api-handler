@@ -33,7 +33,6 @@ export const createReducer = <ResourceType>({
       return newState
     }
     case getType(clearStore): {
-      console.log('clear store')
       return {}
     }
     default:
