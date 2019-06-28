@@ -9,9 +9,7 @@ export function emitWarning(code: WarningCodes, ...data: string[]) {
   switch (code) {
     case WarningCodes.keyMismatch:
       console.warn(
-        `[rest-api-handler]: Mismatch between store key ${
-          data[0]
-        } and resourceName ${data[1]}. store key will be ignored`
+        `[rest-api-handler]: Mismatch between store key ${data[0]} and resourceName ${data[1]}. store key will be ignored`
       )
       break
     case WarningCodes.storeNotSet:
