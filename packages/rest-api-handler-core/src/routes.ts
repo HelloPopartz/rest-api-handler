@@ -6,6 +6,7 @@ import {
   RouteOptions,
   RouteMethod
 } from './routes.types'
+import { Omit } from './utils/types'
 
 export function generateRoutes<
   ResourceType,
@@ -15,10 +16,13 @@ export function generateRoutes<
   inheritableConfig: RouteInheritableOptions<ResourceType>
 ) {
   function createRoute<
-    TransformRequestFunc extends (...args: any) => RouteData = () => {},
-    DataType extends RouteDataType = 'item'
+    DataType extends RouteDataType,
+    TransformRequestFunc extends (...args: any) => RouteData = () => {}
   >(
-    route: RouteOptions<ResourceType, TransformRequestFunc, DataType>
+    route: Omit<
+      RouteOptions<ResourceType, TransformRequestFunc, DataType>,
+      'resourceUrl' | 'httpClient'
+    >
   ): RouteOptions<ResourceType, TransformRequestFunc, DataType> {
     return {
       ...inheritableConfig,
@@ -29,7 +33,7 @@ export function generateRoutes<
   const list = createRoute({
     method: RouteMethod.get,
     dataType: 'list',
-    transformResponse: (response: any) => {
+    parseResponse: (response: any): ResourceType[] => {
       if (!!response && Array.isArray(response)) {
         return response
       } else if (!!response.results && Array.isArray(response.results)) {
@@ -40,38 +44,39 @@ export function generateRoutes<
   })
   const create = createRoute({
     method: RouteMethod.post,
+    dataType: 'item',
     handler: (data: ResourceType) => ({
       body: data
     })
   })
   const get = createRoute({
     method: RouteMethod.get,
+    dataType: 'item',
     handler: (id: string | number) => {
-      const parsedId = id.toString()
+      const parsedId = id
       return {
-        resourceId: parsedId,
-        routeParams: [parsedId]
+        resourceId: parsedId
       }
     }
   })
   const patch = createRoute({
     method: RouteMethod.patch,
+    dataType: 'item',
     handler: (id: string | number, data: Partial<ResourceType>) => {
-      const parsedId = id.toString()
+      const parsedId = id
       return {
         resourceId: parsedId,
-        routeParams: [parsedId],
         body: data
       }
     }
   })
   const put = createRoute({
     method: RouteMethod.put,
+    dataType: 'item',
     handler: (id: string | number, data: ResourceType) => {
-      const parsedId = id.toString()
+      const parsedId = id
       return {
         resourceId: parsedId,
-        routeParams: [parsedId],
         body: data
       }
     }
@@ -80,10 +85,9 @@ export function generateRoutes<
     method: RouteMethod.delete,
     dataType: 'none',
     handler: (id: string | number) => {
-      const parsedId = id.toString()
+      const parsedId = id
       return {
-        resourceId: parsedId,
-        routeParams: [parsedId]
+        resourceId: parsedId
       }
     }
   })

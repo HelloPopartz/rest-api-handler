@@ -11,19 +11,24 @@ export type FetchConfig = Partial<Request>
 export type FetchResponse = Response
 
 function generateUrl({
-  entityUrl,
+  resourceUrl,
   resource = '',
+  resourceId,
   routeParams = [],
   queryParams = {}
 }: {
-  entityUrl: string
+  resourceUrl: string
   resource?: string
+  resourceId?: string | number
   routeParams?: (string | number)[]
   queryParams?: Record<string, any>
 }) {
-  let url = entityUrl.replace(/\/$/, '')
+  let url = resourceUrl.replace(/\/$/, '')
   if (resource) {
     url += resource
+  }
+  if (resourceId) {
+    url += `/${resourceId.toString()}`
   }
   if (routeParams.length !== 0) {
     url += (routeParams.reduce(
@@ -42,16 +47,23 @@ export function fetchHttpClient(
   extraConfig?: FetchConfig
 ): HttpClient<FetchConfig> {
   return async ({
-    entityUrl,
+    resourceUrl,
     method,
     resource,
     routeParams,
     body,
     queryParams,
+    resourceId,
     config
   }: HttpClientRequestData<FetchConfig>) => {
     // Read Fetch API
-    const url = generateUrl({ entityUrl, resource, routeParams, queryParams })
+    const url = generateUrl({
+      resourceUrl,
+      resourceId,
+      resource,
+      routeParams,
+      queryParams
+    })
     const response: FetchResponse = await window.fetch(url, {
       ...extraConfig,
       method,

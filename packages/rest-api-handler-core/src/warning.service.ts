@@ -4,6 +4,7 @@ export enum WarningCodes {
   invalidIdType = 'invalid-id-type'
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function emitWarning(code: WarningCodes, data?: string) {
   switch (code) {
     case WarningCodes.noId:
@@ -11,10 +12,6 @@ export function emitWarning(code: WarningCodes, data?: string) {
         '[rest-api-handler]: getResourceId returned a invalid id, this is a not a breaking change but it disables the caching and subscriptions capabilities'
       )
       break
-    case WarningCodes.invalidIdType:
-      console.warn(
-        `[rest-api-handler]: getResourceId returned a invalid id. Ids must be of type string, however the returned id is ${data}`
-      )
     // eslint-disable-next-line no-fallthrough
     default:
       console.warn('[rest-api-handler]: Unknown warning')

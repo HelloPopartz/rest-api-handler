@@ -1,26 +1,39 @@
-import { RestApiActions } from './actions'
+import { RestApiActionHandlers } from './actions'
 import { CacheStoreData } from './createStore'
+import { ActionWithPayload, getType, ActionPayload } from '../utils/actionTypes'
 
-export const reducer = <ResourceType>(
+export const createReducer = <ResourceType>({
+  update,
+  updateList,
+  clearStore,
+  deleteResource
+}: RestApiActionHandlers) => (
   state: CacheStoreData<ResourceType> = {},
-  action: RestApiActions
+  action: ActionWithPayload<any, any>
 ) => {
   switch (action.type) {
-    case 'UPDATE_RESOURCE_SUCCESS': {
-      const { id, data } = action.payload
+    case getType(update.success): {
+      const { id, data }: ActionPayload<typeof update.success> = action.payload
       return {
         ...state,
         [id]: data
       }
     }
-    case 'UPDATE_RESOURCE_LIST_SUCCESS': {
-      const { data } = action.payload
+    case getType(updateList.success): {
+      const { data }: ActionPayload<typeof updateList.success> = action.payload
       return {
         ...state,
         ...(data as Record<string, ResourceType>)
       }
     }
-    case 'CLEAR_STORE': {
+    case getType(deleteResource): {
+      const { id }: ActionPayload<typeof deleteResource> = action.payload
+      const newState = { ...state }
+      delete newState[id]
+      return newState
+    }
+    case getType(clearStore): {
+      console.log('clear store')
       return {}
     }
     default:

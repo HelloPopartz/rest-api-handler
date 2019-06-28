@@ -2,15 +2,15 @@ import { HttpClient, HttpClientRequestData } from '@rest-api-handler/core'
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 
 function generateUrl({
-  entityUrl,
+  resourceUrl,
   resource = '',
   routeParams = []
 }: {
-  entityUrl: string
+  resourceUrl: string
   resource?: string
   routeParams?: (string | number)[]
 }) {
-  let url = entityUrl.replace(/\/$/, '')
+  let url = resourceUrl.replace(/\/$/, '')
   if (resource) {
     url += resource
   }
@@ -29,7 +29,7 @@ export function axiosHttpClient(
   extraConfig?: AxiosRequestConfig
 ): HttpClient<AxiosRequestConfig> {
   return async ({
-    entityUrl,
+    resourceUrl,
     method,
     resource,
     routeParams,
@@ -37,13 +37,13 @@ export function axiosHttpClient(
     queryParams,
     config
   }: HttpClientRequestData<AxiosRequestConfig>) => {
-    const url = generateUrl({ entityUrl, resource, routeParams })
+    const url = generateUrl({ resourceUrl, resource, routeParams })
     const response: AxiosResponse = await axiosInstance.request({
       ...extraConfig,
       baseUrl: url,
       method,
-      body: JSON.stringify(body),
-      queryParams,
+      data: body,
+      params: queryParams,
       ...config
     } as any)
     return response.data

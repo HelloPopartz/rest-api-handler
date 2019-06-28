@@ -3,11 +3,13 @@ import {
   CacheStore,
   createStore,
   createSelectors,
-  GetIdFromResource
+  GetIdFromResource,
+  GetResourceById
 } from './store'
 import { HttpClient } from './httpClient.types'
 import { generateRoutes } from './routes'
 import { RouteMap } from './routes.types'
+import { createOperations } from './store/operations'
 
 export interface RestApiResource<
   ResourceType,
@@ -16,14 +18,19 @@ export interface RestApiResource<
   api: Handlers<ResourceType, Routes>
   subscribe: CacheStore<ResourceType>['subscribe']
   unsubscribe: CacheStore<ResourceType>['unsubscribe']
+  getState: CacheStore<ResourceType>['getState']
+  forceUpdate: (data: ResourceType | ResourceType[]) => void
   selectors: {
     getIdFromResource: GetIdFromResource<ResourceType>
-    getResourceById: (id: string) => ResourceType
+    getResourceById: GetResourceById<ResourceType>
   }
   config: {
     routeConfig: Routes
     store: CacheStore<ResourceType>
     httpClient: HttpClient<any>
+    partialUpdate: boolean
+    transformData: (originalData: any) => ResourceType
+    getIdFromResource: GetIdFromResource<ResourceType>
   }
 }
 
@@ -38,7 +45,7 @@ export function createResource<
   ResourceType,
   ExtraRoutes extends RouteMap<ResourceType> = {}
 >(
-  entityUrl: string,
+  resourceUrl: string,
   httpClient: HttpClient<any>,
   extraRoutes: ExtraRoutes,
   resourceConfig: ResourceConfig<ResourceType> = {}
@@ -48,20 +55,24 @@ export function createResource<
     customStore,
     transformData,
     getIdFromResource = (data: ResourceType) =>
-      (data as any).id ? (data as any).id.toString() : undefined
+      (data as any).id ? (data as any).id : undefined
   } = resourceConfig
   const finalRoutes = generateRoutes<ResourceType, ExtraRoutes>(extraRoutes, {
     partialUpdate,
     transformData,
-    entityUrl
+    httpClient,
+    resourceUrl
   })
   const store = customStore || createStore<ResourceType>()
-  const selectors = createSelectors(store)
-  const api = createHandlers(httpClient, finalRoutes, getIdFromResource, store)
+  const selectors = createSelectors()
+  const api = createHandlers(finalRoutes, getIdFromResource, store)
+  const { forceUpdate } = createOperations(store, getIdFromResource)
   return {
     api,
     subscribe: store.subscribe,
     unsubscribe: store.unsubscribe,
+    getState: store.getState,
+    forceUpdate,
     selectors: {
       ...selectors,
       getIdFromResource
@@ -69,7 +80,10 @@ export function createResource<
     config: {
       routeConfig: finalRoutes,
       httpClient,
-      store
+      store,
+      partialUpdate,
+      transformData,
+      getIdFromResource
     }
   } as RestApiResource<ResourceType, typeof finalRoutes>
 }

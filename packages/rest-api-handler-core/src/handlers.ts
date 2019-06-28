@@ -1,8 +1,6 @@
 import { mapObject } from './utils/object'
 import { CacheStore, GetIdFromResource } from './store'
-import { HttpClient } from './httpClient.types'
 import { emitWarning, WarningCodes } from './warning.service'
-import { updateResource, updateResourceList } from './store/actions'
 import { RouteMap, RouteOptions } from './routes.types'
 
 export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
@@ -10,15 +8,12 @@ export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
     ...params: Routes[P]['handler'] extends undefined
       ? []
       : Parameters<NonNullable<Routes[P]['handler']>>
-  ) => Promise<ReturnType<NonNullable<Routes[P]['transformResponse']>>>
+  ) => Promise<ReturnType<NonNullable<Routes[P]['parseResponse']>>>
 }
 
-function checkIfValidId(id: string) {
+export function checkIfValidId(id: string | number) {
   if (id === null || id === undefined) {
     emitWarning(WarningCodes.noId)
-    return false
-  } else if (typeof id !== 'string') {
-    emitWarning(WarningCodes.invalidIdType, typeof id)
     return false
   } else {
     return true
@@ -27,16 +22,17 @@ function checkIfValidId(id: string) {
 
 function generateHandlersFromRoutes<
   ResourceType,
-  Routes extends RouteMap<ResourceType>,
-  HttpClientOptions
+  Routes extends RouteMap<ResourceType>
 >({
   routes,
-  httpClient,
-  store,
+  store: {
+    dispatch,
+    getState,
+    actions: { update, updateList, deleteResource }
+  },
   getIdFromResource
 }: {
   routes: Routes
-  httpClient: HttpClient<HttpClientOptions>
   getIdFromResource: GetIdFromResource<ResourceType>
   store: CacheStore<ResourceType>
 }): Handlers<ResourceType, Routes> {
@@ -48,14 +44,16 @@ function generateHandlersFromRoutes<
   ) => {
     const {
       handler = () => {},
-      transformResponse,
+      parseResponse,
       transformData,
       partialUpdate,
-      entityUrl,
+      resourceUrl,
       method,
+      httpClient,
       dataType = 'item',
       resource
     } = route
+
     const routeWithName = { ...route, name: routeName }
     const apiHandler = async (
       ...params: Parameters<NonNullable<typeof handler>>
@@ -65,11 +63,9 @@ function generateHandlersFromRoutes<
       const { resourceId } = requestData
       // If we are updating a particular entity, emit an action
       if (!!resourceId && dataType !== 'list') {
-        store.dispatch(
-          updateResource.request({ routeData: routeWithName, id: resourceId })
-        )
+        dispatch(update.request({ routeData: routeWithName, id: resourceId }))
       } else if (dataType === 'list') {
-        store.dispatch(updateResourceList.request({ routeData: routeWithName }))
+        dispatch(updateList.request({ routeData: routeWithName }))
       }
 
       // Make api call
@@ -77,16 +73,23 @@ function generateHandlersFromRoutes<
         const responseData = await httpClient({
           method,
           resource,
-          entityUrl,
+          resourceUrl,
           ...requestData
         })
         // First transform the response to check if the data we need is nested
         // For example, when the resources are under the key "results" in a list
-        let parsedResponse = transformResponse
-          ? transformResponse(responseData, requestData)
+        let parsedResponse = parseResponse
+          ? parseResponse(responseData, requestData)
           : responseData
         // Transform the items of the response into id and data
-        if (dataType !== 'list') {
+        if (dataType === 'none' && !!resourceId) {
+          dispatch(
+            deleteResource({
+              routeData: routeWithName,
+              id: resourceId
+            })
+          )
+        } else if (dataType === 'item') {
           let result = parsedResponse
           if (transformData) {
             result = transformData(parsedResponse)
@@ -95,18 +98,16 @@ function generateHandlersFromRoutes<
           const validId = checkIfValidId(id)
           // Emit subscription
           if (validId) {
-            result = partialUpdate
-              ? { ...store.getState()[id], ...result }
-              : result
-            store.dispatch(
-              updateResource.success({
+            result = partialUpdate ? { ...getState()[id], ...result } : result
+            dispatch(
+              update.success({
                 routeData: routeWithName,
                 id,
                 data: result
               })
             )
-          } else if (dataType !== 'list') {
-            store.dispatch(updateResource.cancel({ routeData: routeWithName }))
+          } else {
+            dispatch(update.cancel({ routeData: routeWithName }))
           }
           return result
         } else if (dataType === 'list') {
@@ -125,8 +126,8 @@ function generateHandlersFromRoutes<
             }
             result.push(parsedData)
           })
-          store.dispatch(
-            updateResourceList.success({
+          dispatch(
+            updateList.success({
               routeData: routeWithName,
               data: mapForStore
             })
@@ -135,16 +136,16 @@ function generateHandlersFromRoutes<
         }
       } catch (e) {
         if (dataType !== 'list' && !!resourceId) {
-          store.dispatch(
-            updateResource.failure({
+          dispatch(
+            update.failure({
               routeData: routeWithName,
               error: e,
               id: resourceId
             })
           )
         } else if (dataType === 'list') {
-          store.dispatch(
-            updateResourceList.failure({
+          dispatch(
+            updateList.failure({
               routeData: routeWithName,
               error: e
             })
@@ -159,23 +160,13 @@ function generateHandlersFromRoutes<
   return mapObject(routes, mapRouteToHandler) as any
 }
 
-export function createHandlers<
-  ResourceType,
-  Routes extends RouteMap<any>,
-  HttpClientOptions
->(
-  httpClient: HttpClient<HttpClientOptions>,
+export function createHandlers<ResourceType, Routes extends RouteMap<any>>(
   routes: Routes,
   getIdFromResource: GetIdFromResource<ResourceType>,
   store: CacheStore<ResourceType>
 ) {
-  const handlers = generateHandlersFromRoutes<
-    ResourceType,
-    Routes,
-    HttpClientOptions
-  >({
+  const handlers = generateHandlersFromRoutes<ResourceType, Routes>({
     routes,
-    httpClient,
     store,
     getIdFromResource
   })

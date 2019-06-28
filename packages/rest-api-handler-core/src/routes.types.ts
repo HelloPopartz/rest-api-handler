@@ -1,3 +1,5 @@
+import { HttpClient } from './httpClient.types'
+
 export enum RouteMethod {
   get = 'GET',
   post = 'POST',
@@ -15,8 +17,9 @@ export type RouteData<HttpClientOptions = any> = {
 }
 
 export interface RouteInheritableOptions<ResourceType> {
+  httpClient: HttpClient<any>
+  resourceUrl: string
   partialUpdate?: boolean
-  entityUrl: string
   transformData?: (originalData: any) => ResourceType
 }
 
@@ -26,13 +29,13 @@ export interface RouteOptions<
   ResourceType,
   TransformRequestFunc extends (...args: any) => RouteData = () => {},
   DataType extends RouteDataType = 'item'
-> extends Partial<RouteInheritableOptions<ResourceType>> {
+> extends RouteInheritableOptions<ResourceType> {
   handler?: TransformRequestFunc extends () => {}
     ? undefined
     : TransformRequestFunc
   resource?: string
   dataType?: DataType
-  transformResponse?: (
+  parseResponse?: (
     response: any,
     requestData: RouteData
   ) => DataType extends 'none'

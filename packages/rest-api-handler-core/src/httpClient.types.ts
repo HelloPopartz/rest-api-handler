@@ -1,7 +1,7 @@
 import { RouteOptions, RouteData } from './routes.types'
 
 export type HttpClientRequestData<HttpClientOptions> = {
-  entityUrl: string
+  resourceUrl: string
 } & Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
   RouteData<HttpClientOptions>
 

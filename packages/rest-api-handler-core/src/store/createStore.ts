@@ -1,13 +1,14 @@
-import { RestApiActions } from './actions'
-import { reducer } from './reducer'
+import { RestApiActionHandlers, createActions } from './actions'
+import { createReducer } from './reducer'
+import { ActionWithPayload } from '../utils/actionTypes'
 
-export type CacheStoreData<ResourceType> = Record<string, ResourceType>
+export type CacheStoreData<ResourceType> = Record<string | number, ResourceType>
 
-export type CacheStoreDispatch = (action: RestApiActions) => void
+export type CacheStoreDispatch = (action: ActionWithPayload<any, any>) => void
 
 export type SubscribeCallback<ResourceType> = (
   state: CacheStoreData<ResourceType>,
-  action: RestApiActions
+  action: ActionWithPayload<any, any>
 ) => void
 
 export type CacheStore<ResourceType> = Readonly<{
@@ -15,12 +16,13 @@ export type CacheStore<ResourceType> = Readonly<{
   getState: () => CacheStoreData<ResourceType>
   subscribe: (callback: SubscribeCallback<ResourceType>) => string
   unsubscribe: (subId: string) => boolean
+  actions: RestApiActionHandlers
 }>
 
 export function createStore<ResourceType>() {
   // Store data
   let uId = 0
-  let store = {} as Record<string, ResourceType>
+  let state = {} as CacheStoreData<ResourceType>
   let subscriptions = {} as Record<string, SubscribeCallback<ResourceType>>
 
   const subscribe = (callback: SubscribeCallback<ResourceType>) => {
@@ -38,17 +40,21 @@ export function createStore<ResourceType>() {
     }
   }
 
-  const getState = () => store
+  const getState = () => state
 
-  const dispatch = (action: RestApiActions) => {
-    store = reducer(store, action)
-    Object.values(subscriptions).forEach(callback => callback(store, action))
+  const actions = createActions()
+  const reducer = createReducer<ResourceType>(actions)
+
+  const dispatch = (action: ActionWithPayload<any, any>) => {
+    state = reducer(state, action)
+    Object.values(subscriptions).forEach(callback => callback(state, action))
   }
 
   return {
     getState,
     dispatch,
     subscribe,
-    unsubscribe
+    unsubscribe,
+    actions
   }
 }

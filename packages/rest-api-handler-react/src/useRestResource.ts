@@ -1,6 +1,8 @@
 import { RestApiResource, CacheStore } from '@rest-api-handler/core'
 import { useEffect, useReducer, useCallback } from 'react'
 
+import { getType } from './utils/actionTypes'
+
 type UseRestApiState<T> = {
   loading: boolean
   error: Error | undefined
@@ -16,22 +18,27 @@ type UseRestApiActions<ResourceType> =
   | { type: 'REFRESH' }
 
 function getDataFromStore<ResourceType>(
+  getState: CacheStore<ResourceType>['getState'],
   getResourceById: RestApiResource<
     ResourceType,
     any
   >['selectors']['getResourceById'],
-  ids: string[] | undefined
+  ids: (string | number)[] | undefined
 ): ResourceType | ResourceType[] | undefined {
   if (ids === undefined) {
     return undefined
   }
-  const data = ids.map(getResourceById)
-  if (data.length === 0) {
+  try {
+    const data = ids.map(id => getResourceById(getState(), id))
+    if (data.length === 0) {
+      return undefined
+    } else if (data.length === 1) {
+      return data[0]
+    } else {
+      return data
+    }
+  } catch (e) {
     return undefined
-  } else if (data.length === 1) {
-    return data[0]
-  } else {
-    return data
   }
 }
 
@@ -46,13 +53,18 @@ export function useApiResource<
     api,
     subscribe,
     unsubscribe,
+    getState,
+    config,
     selectors: { getIdFromResource, getResourceById }
   }: RestResource,
   apiCall: (apiHandlers: RestResource['api']) => Promise<ReturnData>,
   depArray: any[] = []
 ): UseRestApiState<ReturnData> {
   const dataFetchReducer = useCallback(
-    (state: UseRestApiState<string[]>, action: UseRestApiActions<string[]>) => {
+    (
+      state: UseRestApiState<(string | number)[]>,
+      action: UseRestApiActions<(string | number)[]>
+    ) => {
       switch (action.type) {
         case 'FETCH_INIT':
           return {
@@ -127,15 +139,16 @@ export function useApiResource<
       return
     }
     const subscriptionId = subscribe((_, action) => {
+      const { update, updateList } = config.store.actions
       switch (action.type) {
-        case 'UPDATE_RESOURCE_REQUEST': {
+        case getType(update.request): {
           const { id } = action.payload
           if (currentDataIds.includes(id)) {
             dispatch({ type: 'FETCH_INIT' })
           }
           break
         }
-        case 'UPDATE_RESOURCE_SUCCESS': {
+        case getType(update.success): {
           const { id } = action.payload
           if (currentDataIds.includes(id)) {
             dispatch({
@@ -144,7 +157,7 @@ export function useApiResource<
           }
           break
         }
-        case 'UPDATE_RESOURCE_LIST_SUCCESS': {
+        case getType(updateList.success): {
           const { data: newData } = action.payload
           const shouldUpdate = currentDataIds.some(
             id => newData[id] !== undefined
@@ -156,7 +169,7 @@ export function useApiResource<
           }
           break
         }
-        case 'UPDATE_RESOURCE_FAILURE': {
+        case getType(update.failure): {
           const { error, id } = action.payload
           if (!!id && currentDataIds.includes(id)) {
             dispatch({ type: 'FETCH_FAILURE', payload: error })
@@ -170,11 +183,11 @@ export function useApiResource<
     return () => {
       unsubscribe(subscriptionId)
     }
-  }, [currentDataIds, dispatch, subscribe, unsubscribe])
+  }, [config.store.actions, currentDataIds, dispatch, subscribe, unsubscribe])
 
   return {
     loading,
     error,
-    data: getDataFromStore(getResourceById, currentDataIds) as any
+    data: getDataFromStore(getState, getResourceById, currentDataIds) as any
   }
 }
