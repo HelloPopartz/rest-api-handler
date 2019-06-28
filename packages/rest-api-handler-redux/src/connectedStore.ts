@@ -1,14 +1,18 @@
 import {
   SubscribeCallback,
   createActions,
-  createReducer
+  createReducer,
+  CacheStoreData
 } from '@rest-api-handler/core'
 
 import { ActionWithPayload } from './utils/actionTypes'
 import { EnhancedStore, REST_API_STORE_ID } from './restStoreEnhancer.types'
 import { emitWarning, WarningCodes } from './warning.service'
 
-export function createConnectedStore<ResourceType>(resourceName: string) {
+export function createConnectedStore<ResourceType>(
+  resourceName: string,
+  initialData: CacheStoreData<ResourceType> = {}
+) {
   // Store data
   let uId = 0
   let reduxStore: EnhancedStore<any, any>
@@ -39,7 +43,7 @@ export function createConnectedStore<ResourceType>(resourceName: string) {
   }
 
   const actions = createActions(resourceName)
-  const reducer = createReducer<ResourceType>(actions)
+  const reducer = createReducer<ResourceType>(actions, initialData)
 
   const dispatch = (action: ActionWithPayload<any, any>) => {
     if (!reduxStore) {

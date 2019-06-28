@@ -30,9 +30,15 @@ export function createConnectedResource<
   resourceUrl: string,
   httpClient: HttpClient<any>,
   extraRoutes: ExtraRoutes,
-  resourceConfig: Omit<ResourceConfig<ResourceType>, 'customStore'> = {}
+  {
+    initialData,
+    ...resourceConfig
+  }: Omit<ResourceConfig<ResourceType>, 'customStore'> = {}
 ) {
-  const internalStore = createConnectedStore<ResourceType>(resourceName)
+  const internalStore = createConnectedStore<ResourceType>(
+    resourceName,
+    initialData
+  )
   const restResource = createResource(resourceUrl, httpClient, extraRoutes, {
     ...resourceConfig,
     customStore: internalStore

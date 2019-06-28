@@ -4,7 +4,8 @@ import {
   createStore,
   createSelectors,
   GetIdFromResource,
-  GetResourceById
+  GetResourceById,
+  CacheStoreData
 } from './store'
 import { HttpClient } from './httpClient.types'
 import { generateRoutes } from './routes'
@@ -39,6 +40,7 @@ export type ResourceConfig<ResourceType> = {
   transformData?: (originalData: any) => ResourceType
   customStore?: CacheStore<ResourceType>
   getIdFromResource?: GetIdFromResource<ResourceType>
+  initialData?: CacheStoreData<ResourceType>
 }
 
 export function createResource<
@@ -54,6 +56,7 @@ export function createResource<
     partialUpdate = true,
     customStore,
     transformData,
+    initialData,
     getIdFromResource = (data: ResourceType) =>
       (data as any).id ? (data as any).id : undefined
   } = resourceConfig
@@ -63,7 +66,7 @@ export function createResource<
     httpClient,
     resourceUrl
   })
-  const store = customStore || createStore<ResourceType>()
+  const store = customStore || createStore<ResourceType>(initialData)
   const selectors = createSelectors()
   const api = createHandlers(finalRoutes, getIdFromResource, store)
   const { forceUpdate } = createOperations(store, getIdFromResource)

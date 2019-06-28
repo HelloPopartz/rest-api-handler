@@ -13,5 +13,8 @@ export const resource = createConnectedResource<Todo, {}>(
   'https://jsonplaceholder.typicode.com/todos',
   fetchHttpClient(),
   {},
-  { partialUpdate: false }
+  {
+    partialUpdate: false,
+    initialData: { 1: { id: 1, userId: 200, title: 'wow', completed: false } }
+  }
 )

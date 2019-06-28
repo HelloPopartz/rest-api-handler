@@ -2,13 +2,11 @@ import { RestApiActionHandlers } from './actions'
 import { CacheStoreData } from './createStore'
 import { ActionWithPayload, getType, ActionPayload } from '../utils/actionTypes'
 
-export const createReducer = <ResourceType>({
-  update,
-  updateList,
-  clearStore,
-  deleteResource
-}: RestApiActionHandlers) => (
-  state: CacheStoreData<ResourceType> = {},
+export const createReducer = <ResourceType>(
+  { update, updateList, clearStore, deleteResource }: RestApiActionHandlers,
+  initialState: CacheStoreData<ResourceType> = {}
+) => (
+  state: CacheStoreData<ResourceType> = initialState,
   action: ActionWithPayload<any, any>
 ) => {
   switch (action.type) {
