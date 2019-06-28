@@ -1,12 +1,12 @@
 {
   "name": "react-redux-example",
-  "version": "1.0.3-alpha.1",
+  "version": "1.0.4-alpha.0",
   "private": true,
   "dependencies": {
-    "@rest-api-handler/core": "^1.0.3-alpha.1",
-    "@rest-api-handler/fetch-http-client": "^1.0.3-alpha.1",
-    "@rest-api-handler/react": "^1.0.3-alpha.1",
-    "@rest-api-handler/redux": "^1.0.3-alpha.1",
+    "@rest-api-handler/core": "^1.0.4-alpha.0",
+    "@rest-api-handler/fetch-http-client": "^1.0.4-alpha.0",
+    "@rest-api-handler/react": "^1.0.4-alpha.0",
+    "@rest-api-handler/redux": "^1.0.4-alpha.0",
     "@types/jest": "24.0.15",
     "@types/node": "12.0.10",
     "@types/react": "16.8.22",
