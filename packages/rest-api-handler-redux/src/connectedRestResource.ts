@@ -16,7 +16,7 @@ import { EnhancedStore } from './restStoreEnhancer.types'
 import { createSelectors, GetAllResources } from './createSelectors'
 
 export interface ConnectedRestApiResource<
-  ResourceType,
+  ResourceType extends { id: string | number },
   Routes extends RouteMap<ResourceType>
 > extends RestApiResource<ResourceType, Routes> {
   selectors: {
@@ -31,7 +31,7 @@ export interface ConnectedRestApiResource<
 }
 
 export function createConnectedResource<
-  ResourceType,
+  ResourceType extends { id: string | number },
   ExtraRoutes extends RouteMap<ResourceType> = {}
 >(
   storeId: string,

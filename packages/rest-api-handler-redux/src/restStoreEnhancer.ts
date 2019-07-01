@@ -15,8 +15,9 @@ import {
   REST_API_STORE_ID,
   EnhancedStore
 } from './restStoreEnhancer.types'
+import { isEmpty } from './utils/objects'
 
-function generateReducers<ResourceType>(
+function generateReducers<ResourceType extends { id: string | number }>(
   restResources: Record<string, ConnectedRestApiResource<ResourceType, any>>
 ) {
   const restResourcesReducers = {}
@@ -30,7 +31,7 @@ function generateReducers<ResourceType>(
   return combineReducers<RestApiEntitiesState>(restResourcesReducers as any)
 }
 
-function injectReduxToResources<ResourceType>(
+function injectReduxToResources<ResourceType extends { id: string | number }>(
   store: EnhancedStore<any, any>,
   restResources: Record<string, ConnectedRestApiResource<ResourceType, any>>
 ) {
@@ -41,13 +42,16 @@ function injectReduxToResources<ResourceType>(
 }
 
 export const connectToRestResources = (
-  restResources: Record<string, any>
+  restResources: Record<string, any> = {}
 ): StoreEnhancer<{}, RestApiEntitiesState> => (
   createStore: StoreEnhancerStoreCreator<{}, RestApiEntitiesState>
 ) => <S, A extends Action = AnyAction>(
   reducer: Reducer<S, A>,
   preloadedState: DeepPartial<S>
 ) => {
+  if (isEmpty(restResources)) {
+    emitWarning(WarningCodes.noResources)
+  }
   const entitiesReducer = generateReducers(restResources)
   function enhancedReducer(state: S & RestApiEntitiesState, action: A) {
     const { [REST_API_STORE_ID]: restApiState, ...otherState } = state
