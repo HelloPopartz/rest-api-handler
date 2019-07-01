@@ -1,6 +1,6 @@
 {
   "name": "@rest-api-handler/redux",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "source": "src/index.ts",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
