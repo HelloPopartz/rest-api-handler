@@ -21,7 +21,7 @@ export function checkIfValidId(id: string | number) {
 }
 
 function generateHandlersFromRoutes<
-  ResourceType,
+  ResourceType extends { id: string | number },
   Routes extends RouteMap<ResourceType>
 >({
   routes,
@@ -88,7 +88,7 @@ function generateHandlersFromRoutes<
           ? parseResponse(responseData, requestData)
           : responseData
         // Transform the items of the response into id and data
-        if (dataType === 'none' && !!resourceId) {
+        if (dataType === 'delete' && !!resourceId) {
           dispatch(
             deleteResource({
               routeData: routeWithName,
@@ -157,7 +157,7 @@ function generateHandlersFromRoutes<
             })
           )
         }
-
+        console.error(e)
         throw e
       }
     }
@@ -166,7 +166,10 @@ function generateHandlersFromRoutes<
   return mapObject(routes, mapRouteToHandler) as any
 }
 
-export function createHandlers<ResourceType, Routes extends RouteMap<any>>(
+export function createHandlers<
+  ResourceType extends { id: string | number },
+  Routes extends RouteMap<any>
+>(
   routes: Routes,
   getIdFromResource: GetIdFromResource<ResourceType>,
   store: CacheStore<ResourceType>

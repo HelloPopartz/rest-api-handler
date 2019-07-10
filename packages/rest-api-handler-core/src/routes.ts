@@ -83,7 +83,7 @@ export function generateRoutes<
   })
   const deleteApi = createRoute({
     method: RouteMethod.delete,
-    dataType: 'none',
+    dataType: 'delete',
     handler: (id: ResourceType['id']) => {
       const parsedId = id
       return {

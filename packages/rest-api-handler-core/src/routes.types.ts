@@ -23,7 +23,7 @@ export interface RouteInheritableOptions<ResourceType> {
   transformData?: (originalData: any) => ResourceType
 }
 
-export type RouteDataType = 'item' | 'list' | 'none'
+export type RouteDataType = 'item' | 'list' | 'none' | 'delete'
 
 export interface RouteOptions<
   ResourceType,
