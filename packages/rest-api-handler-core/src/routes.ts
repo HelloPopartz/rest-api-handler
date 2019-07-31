@@ -45,7 +45,7 @@ export function generateRoutes<
   const create = createRoute({
     method: RouteMethod.post,
     dataType: 'item',
-    handler: (data: ResourceType) => ({
+    handler: (data: Omit<ResourceType, 'id'>) => ({
       body: data
     })
   })
