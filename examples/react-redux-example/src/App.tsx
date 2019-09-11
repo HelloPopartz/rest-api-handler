@@ -6,21 +6,17 @@ import { useCallback } from 'react'
 
 const App: React.FC = () => {
   const [resourceId, setResourceId] = useState(1)
-  const { loading, error, data } = useApiResource(
-    resource,
-    resourceApi => resourceApi.list(),
-    [resourceId]
-  )
+  const { loading, error, data } = useApiResource(resource, getApiHandlers => getApiHandlers().list(), [resourceId])
   const updateResource = useCallback(() => {
     if (!data || !data[0]) {
       console.log('fall through')
       return
     }
-    resource.api.put(resourceId, {
+    resource.getApiHandlers().put(resourceId, {
       id: resourceId,
       userId: 1,
       completed: false,
-      title: 'hello'
+      title: 'hello',
     })
   }, [resourceId, data])
   return (
@@ -30,13 +26,10 @@ const App: React.FC = () => {
         <div
           style={{
             display: 'flex',
-            justifyContent: 'center'
+            justifyContent: 'center',
           }}
         >
-          <button
-            style={{ margin: '0 8px' }}
-            onClick={() => setResourceId(resourceId + 1)}
-          >
+          <button style={{ margin: '0 8px' }} onClick={() => setResourceId(resourceId + 1)}>
             Get next resource
           </button>
           <button style={{ margin: '0 8px' }} onClick={updateResource}>
@@ -50,7 +43,7 @@ const App: React.FC = () => {
               textAlign: 'left',
               padding: 32,
               margin: 0,
-              textOverflow: 'ellipsis'
+              textOverflow: 'ellipsis',
             }}
           >
             {error && error.stack}

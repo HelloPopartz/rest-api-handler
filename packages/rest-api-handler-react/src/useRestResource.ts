@@ -17,19 +17,16 @@ type UseRestApiActions<ResourceType> =
   | { type: 'FETCH_FAILURE'; payload: Error }
   | { type: 'REFRESH' }
 
-function getDataFromStore<ResourceType>(
+function getDataFromStore<ResourceType extends { id: string | number }>(
   getState: CacheStore<ResourceType>['getState'],
-  getResourceById: RestApiResource<
-    ResourceType,
-    any
-  >['selectors']['getResourceById'],
+  getResource: RestApiResource<ResourceType, any, any>['getResource'],
   ids: (string | number)[] | undefined
 ): ResourceType | ResourceType[] | undefined {
   if (ids === undefined) {
     return undefined
   }
   try {
-    const data = ids.map(id => getResourceById(getState(), id))
+    const data = ids.map(id => getResource(getState(), id))
     if (data.length === 0) {
       return undefined
     } else if (data.length === 1) {
@@ -43,34 +40,22 @@ function getDataFromStore<ResourceType>(
 }
 
 export function useApiResource<
-  RestResource extends RestApiResource<ResourceType, any>,
+  RestResource extends RestApiResource<ResourceType, any, any>,
   ReturnData extends ResourceType | ResourceType[] | undefined,
-  ResourceType = NonNullable<
-    ReturnType<RestResource['selectors']['getResourceById']>
-  >
+  ResourceType extends { id: number | string } = NonNullable<ReturnType<RestResource['getResource']>>
 >(
-  {
-    api,
-    subscribe,
-    unsubscribe,
-    getState,
-    config,
-    selectors: { getIdFromResource, getResourceById }
-  }: RestResource,
-  apiCall: (apiHandlers: RestResource['api']) => Promise<ReturnData>,
+  { getApiHandlers, subscribe, unsubscribe, getState, config, getIdFromResource, getResource }: RestResource,
+  apiCall: (getApiHandlers: RestResource['getApiHandlers']) => Promise<ReturnData>,
   depArray: any[] = []
 ): UseRestApiState<ReturnData> {
   const dataFetchReducer = useCallback(
-    (
-      state: UseRestApiState<(string | number)[]>,
-      action: UseRestApiActions<(string | number)[]>
-    ) => {
+    (state: UseRestApiState<(string | number)[]>, action: UseRestApiActions<(string | number)[]>) => {
       switch (action.type) {
         case 'FETCH_INIT':
           return {
             ...state,
             loading: true,
-            error: undefined
+            error: undefined,
           }
         case 'FETCH_SUCCESS': {
           const data = action.payload
@@ -78,20 +63,20 @@ export function useApiResource<
             ...state,
             loading: false,
             error: undefined,
-            data
+            data,
           }
         }
         case 'FETCH_FAILURE':
           return {
             ...state,
             loading: false,
-            error: action.payload as Error
+            error: action.payload as Error,
           }
         case 'REFRESH':
           return {
             ...state,
             loading: false,
-            error: undefined
+            error: undefined,
           }
         default:
           throw new Error()
@@ -102,7 +87,7 @@ export function useApiResource<
   const [state, dispatch] = useReducer(dataFetchReducer, {
     loading: false,
     error: undefined,
-    data: undefined
+    data: undefined,
   })
   const { loading, data: currentDataIds, error } = state
 
@@ -113,7 +98,7 @@ export function useApiResource<
       dispatch({ type: 'FETCH_INIT' })
 
       try {
-        const response = await apiCall(api)
+        const response = await apiCall(getApiHandlers)
         if (!didCancel && !!response) {
           const dataIds = Array.isArray(response)
             ? response.map(item => getIdFromResource(item))
@@ -152,19 +137,17 @@ export function useApiResource<
           const { id } = action.payload
           if (currentDataIds.includes(id)) {
             dispatch({
-              type: 'REFRESH'
+              type: 'REFRESH',
             })
           }
           break
         }
         case getType(updateList.success): {
           const { data: newData } = action.payload
-          const shouldUpdate = currentDataIds.some(
-            id => newData[id] !== undefined
-          )
+          const shouldUpdate = currentDataIds.some(id => newData[id] !== undefined)
           if (shouldUpdate) {
             dispatch({
-              type: 'REFRESH'
+              type: 'REFRESH',
             })
           }
           break
@@ -188,6 +171,6 @@ export function useApiResource<
   return {
     loading,
     error,
-    data: getDataFromStore(getState, getResourceById, currentDataIds) as any
+    data: getDataFromStore(getState, getResource, currentDataIds) as any,
   }
 }

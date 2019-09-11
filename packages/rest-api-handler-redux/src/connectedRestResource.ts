@@ -2,11 +2,11 @@ import {
   RouteMap,
   createResource,
   ResourceConfig,
-  HttpClient,
+  NetworkClient,
   RestApiResource,
   RestApiActionHandlers,
   GetIdFromResource,
-  GetResourceById
+  GetResource,
 } from '@rest-api-handler/core'
 import { Reducer } from 'redux'
 
@@ -17,13 +17,12 @@ import { createSelectors, GetAllResources } from './createSelectors'
 
 export interface ConnectedRestApiResource<
   ResourceType extends { id: string | number },
+  NetworkClientConfig,
   Routes extends RouteMap<ResourceType>
-> extends RestApiResource<ResourceType, Routes> {
-  selectors: {
-    getAllResources: GetAllResources<ResourceType>
-    getIdFromResource: GetIdFromResource<ResourceType>
-    getResourceById: GetResourceById<ResourceType>
-  }
+> extends RestApiResource<ResourceType, NetworkClientConfig, Routes> {
+  getAllResources: GetAllResources<ResourceType>
+  getIdFromResource: GetIdFromResource<ResourceType>
+  getResource: GetResource<ResourceType>
   storeId: string
   actions: RestApiActionHandlers
   reducer: Reducer<Record<string | number, ResourceType>>
@@ -32,41 +31,28 @@ export interface ConnectedRestApiResource<
 
 export function createConnectedResource<
   ResourceType extends { id: string | number },
+  NetworkClientConfig = {},
   ExtraRoutes extends RouteMap<ResourceType> = {}
 >(
   storeId: string,
   resourceUrl: string,
-  httpClient: HttpClient<any>,
+  networkClient: NetworkClient<NetworkClientConfig>,
   extraRoutes: ExtraRoutes,
-  {
-    initialData,
-    ...resourceConfig
-  }: Omit<ResourceConfig<ResourceType>, 'customStore'> = {}
+  { initialData, ...resourceConfig }: Omit<ResourceConfig<ResourceType>, 'customStore'> = {}
 ) {
   const internalStore = createConnectedStore<ResourceType>(storeId, initialData)
-  const { selectors, ...restResource } = createResource(
-    resourceUrl,
-    httpClient,
-    extraRoutes,
-    {
-      ...resourceConfig,
-      customStore: internalStore
-    }
-  )
+  const restResource = createResource(storeId, resourceUrl, networkClient, extraRoutes, {
+    ...resourceConfig,
+    customStore: internalStore,
+  })
   const { actions, reducer, injectReduxStore } = internalStore
-  const reduxSelectors = createSelectors(storeId)
+  const { getAllResources } = createSelectors(storeId)
   return {
     ...restResource,
-    selectors: {
-      ...reduxSelectors,
-      ...selectors
-    },
+    getAllResources,
     storeId: storeId,
     actions,
     reducer,
-    injectReduxStore
-  } as ConnectedRestApiResource<
-    ResourceType,
-    typeof restResource.config.routeConfig
-  >
+    injectReduxStore,
+  } as ConnectedRestApiResource<ResourceType, NetworkClientConfig, typeof restResource.config.routeConfig>
 }

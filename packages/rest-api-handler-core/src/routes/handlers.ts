@@ -1,0 +1,276 @@
+import { mapObject } from '../utils/object'
+import { CacheStore, GetIdFromResource } from '../store'
+import { emitWarning, WarningCodes, createRestApiHandlerError } from '../messages'
+import { RouteMap, RouteOptions, RouteDataWithName } from './routes.types'
+import { NetworkClient } from './networkClient'
+
+export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
+  [P in keyof Routes]: (
+    ...params: Routes[P]['handler'] extends undefined ? [] : Parameters<NonNullable<Routes[P]['handler']>>
+  ) => Promise<ReturnType<NonNullable<Routes[P]['parseResponse']>>>
+}
+
+export type GetApiHandlers<ResourceType, NetworkClientConfig, Routes extends RouteMap<ResourceType>> = (
+  config?: NetworkClientConfig
+) => Handlers<ResourceType, Routes>
+
+export function checkIfValidId(storeName: string, id: string | number) {
+  if (id === null || id === undefined || (typeof id !== 'string' && typeof id !== 'number')) {
+    emitWarning(storeName, WarningCodes.noId)
+    return false
+  } else {
+    return true
+  }
+}
+
+export function emitRequestAction<ResourceType extends { id: string | number }>(
+  routeData: RouteDataWithName,
+  { dataType }: RouteOptions<ResourceType, any, any>,
+  { dispatch, actions: { update, updateList } }: CacheStore<ResourceType>
+) {
+  const { resourceId } = routeData
+  if (!!resourceId && dataType !== 'list') {
+    dispatch(update.request({ routeData, id: resourceId }))
+  } else if (dataType === 'list') {
+    dispatch(updateList.request({ routeData }))
+  }
+}
+
+export function emitDeleteAction<ResourceType extends { id: string | number }>(
+  routeData: RouteDataWithName,
+  { dispatch, actions: { deleteResource } }: CacheStore<ResourceType>
+) {
+  const { resourceId } = routeData
+  if (!resourceId) {
+    return
+  }
+  dispatch(
+    deleteResource({
+      routeData,
+      id: resourceId,
+    })
+  )
+}
+
+export function transformResource<ResourceType extends { id: string | number }>(
+  response: any,
+  routeData: RouteDataWithName,
+  { parseResponse, transformData, partialUpdate }: RouteOptions<ResourceType, any, any>,
+  { getStoreName, getState }: CacheStore<ResourceType>,
+  getIdFromResource: GetIdFromResource<ResourceType>
+) {
+  const { resourceId } = routeData
+  const storeName = getStoreName()
+
+  // First transform the response to check if the data we need is nested
+  // For example, when the resource is under the key "result" in a list
+  const responseData = !!parseResponse ? parseResponse(response, routeData) : response
+  if (Array.isArray(responseData)) {
+    emitWarning(storeName, WarningCodes.arrayInUpdateItem)
+    return undefined
+  }
+
+  // Transform the data as defined by the user
+  // For example, parsing dates
+  const resourceToUpdate = !!transformData ? transformData(responseData) : responseData
+  if (Array.isArray(responseData)) {
+    emitWarning(storeName, WarningCodes.arrayInUpdateItem)
+    return undefined
+  }
+
+  // Always prioritize the id from the response
+  const id = getIdFromResource(resourceToUpdate) || resourceId
+  const validId = checkIfValidId(storeName, id)
+
+  if (validId) {
+    const storedData = getState()[id]
+    return partialUpdate ? { ...storedData, ...resourceToUpdate } : resourceToUpdate
+  } else {
+    return undefined
+  }
+}
+
+export function emitUpdateItemAction<ResourceType extends { id: string | number }>(
+  response: any,
+  routeData: RouteDataWithName,
+  routeConfig: RouteOptions<ResourceType, any, any>,
+  store: CacheStore<ResourceType>,
+  getIdFromResource: GetIdFromResource<ResourceType>
+) {
+  const {
+    dispatch,
+    actions: { update },
+  } = store
+  const data = transformResource(response, routeData, routeConfig, store, getIdFromResource)
+  if (!!data) {
+    const id = getIdFromResource(data)
+    dispatch(
+      update.success({
+        routeData,
+        id,
+        data,
+      })
+    )
+  } else {
+    dispatch(update.cancel({ routeData }))
+  }
+  return data
+}
+
+export function emitUpdateListAction<ResourceType extends { id: string | number }>(
+  response: any,
+  routeData: RouteDataWithName,
+  { parseResponse, ...routeConfig }: RouteOptions<ResourceType, any, any>,
+  store: CacheStore<ResourceType>,
+  getIdFromResource: GetIdFromResource<ResourceType>
+) {
+  const {
+    dispatch,
+    getStoreName,
+    actions: { updateList },
+  } = store
+  const storeName = getStoreName()
+  // First transform the response to check if the data we need is nested
+  // For example, when the resource is under the key "result" in a list
+  const responseData = !!parseResponse ? parseResponse(response, routeData) : response
+
+  if (!Array.isArray(responseData)) {
+    emitWarning(storeName, WarningCodes.arrayInUpdateItem)
+    dispatch(
+      updateList.cancel({
+        routeData,
+      })
+    )
+    return undefined
+  }
+
+  // We remove parseResponse from routeConfig, since it's applied only in the beginning
+  const result: ResourceType[] = responseData.map((responseItemData: any) =>
+    transformResource(responseItemData, routeData, routeConfig, store, getIdFromResource)
+  )
+
+  // Map array to object keyed by id
+  const mapForStore = result.reduce(
+    (map, data) => {
+      if (!data) {
+        return map
+      }
+      const id = getIdFromResource(data)
+      map[String(id)] = data
+      return map
+    },
+    {} as Record<string, ResourceType>
+  )
+
+  dispatch(
+    updateList.success({
+      routeData,
+      data: mapForStore,
+    })
+  )
+  return result
+}
+
+export function emitErrorAction<ResourceType extends { id: string | number }>(
+  e: Error,
+  routeData: RouteDataWithName,
+  { dataType }: RouteOptions<ResourceType, any, any>,
+  { dispatch, actions: { updateList, update } }: CacheStore<ResourceType>
+) {
+  const { resourceId } = routeData
+  if (dataType !== 'list' && !!resourceId) {
+    dispatch(
+      update.failure({
+        routeData,
+        error: e,
+        id: resourceId,
+      })
+    )
+  } else if (dataType === 'list') {
+    dispatch(
+      updateList.failure({
+        routeData,
+        error: e,
+      })
+    )
+  }
+}
+
+function generateHandlersFromRoute<ResourceType extends { id: string | number }, NetworkClientConfig>(
+  routeConfig: RouteOptions<ResourceType, any, any>,
+  routeName: string | number | symbol,
+  store: CacheStore<ResourceType>,
+  getIdFromResource: GetIdFromResource<ResourceType>,
+  networkClient: NetworkClient<NetworkClientConfig>
+) {
+  const { handler = () => {}, resourceUrl, method, dataType = 'item', resource } = routeConfig
+  const { getStoreName } = store
+  const storeName = getStoreName()
+
+  const apiHandler = (config: NetworkClientConfig) => async (...params: Parameters<NonNullable<typeof handler>>) => {
+    // Parse request data
+    const requestData = handler(...params) || {}
+    const routeData = {
+      method,
+      resource,
+      resourceUrl,
+      ...requestData,
+      name: routeName,
+    }
+
+    // If we are updating a particular entity, emit an action
+    emitRequestAction(routeData, dataType, store)
+
+    // Make api call
+    try {
+      const response = await networkClient(config)({
+        method,
+        resource,
+        resourceUrl,
+        ...requestData,
+      })
+
+      switch (dataType) {
+        case 'delete':
+          return emitDeleteAction(routeData, store)
+        case 'item':
+          return emitUpdateItemAction(response, routeData, routeConfig, store, getIdFromResource)
+        default:
+          return emitUpdateListAction(response, routeData, routeConfig, store, getIdFromResource)
+      }
+    } catch (e) {
+      const error = createRestApiHandlerError(storeName, e)
+      emitErrorAction(error, routeData, routeConfig, store)
+    }
+  }
+  return apiHandler
+}
+
+export function createHandlers<
+  ResourceType extends { id: string | number },
+  NetworkClientConfig,
+  Routes extends RouteMap<any>
+>(
+  routes: Routes,
+  store: CacheStore<ResourceType>,
+  getIdFromResource: GetIdFromResource<ResourceType>,
+  networkClient: NetworkClient<NetworkClientConfig>
+): {
+  getApiHandlers: GetApiHandlers<ResourceType, NetworkClientConfig, Routes>
+} {
+  const handlers = mapObject<any, Routes, any>(routes, (route, routeName) =>
+    generateHandlersFromRoute<ResourceType, NetworkClientConfig>(
+      route,
+      routeName,
+      store,
+      getIdFromResource,
+      networkClient
+    )
+  )
+  function getApiHandlers(config: NetworkClientConfig): Handlers<ResourceType, Routes> {
+    return mapObject<any, typeof handlers, any>(handlers, handler => handler(config))
+  }
+  return {
+    getApiHandlers,
+  }
+}

@@ -7,8 +7,6 @@ export type ActionWithPayload<Type, Payload = any> = {
   payload: Payload
 }
 
-export function getType(
-  action: (...args: any) => ActionWithPayload<any, any> | Action<any>
-) {
+export function getType(action: (...args: any) => ActionWithPayload<any, any> | Action<any>) {
   return action().type
 }

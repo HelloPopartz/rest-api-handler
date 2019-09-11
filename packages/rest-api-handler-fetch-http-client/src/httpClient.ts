@@ -1,5 +1,5 @@
 import queryString from 'query-string'
-import { HttpClient, HttpClientRequestData } from '@rest-api-handler/core'
+import { createNetworkClient } from '@rest-api-handler/core'
 import es6Promise from 'es6-promise'
 import 'isomorphic-fetch'
 
@@ -15,7 +15,7 @@ function generateUrl({
   resource = '',
   resourceId,
   routeParams = [],
-  queryParams = {}
+  queryParams = {},
 }: {
   resourceUrl: string
   resource?: string
@@ -32,8 +32,7 @@ function generateUrl({
   }
   if (routeParams.length !== 0) {
     url += (routeParams.reduce(
-      (result: string, currentValue: string | number) =>
-        `${result}/${currentValue.toString()}`,
+      (result: string, currentValue: string | number) => `${result}/${currentValue.toString()}`,
       ''
     ) as string).replace(/\/$/, '')
   }
@@ -43,33 +42,21 @@ function generateUrl({
   return url
 }
 
-export function fetchHttpClient(
-  extraConfig?: FetchConfig
-): HttpClient<FetchConfig> {
-  return async ({
-    resourceUrl,
-    method,
-    resource,
-    routeParams,
-    body,
-    queryParams,
-    resourceId,
-    config
-  }: HttpClientRequestData<FetchConfig>) => {
+export const fetchHttpClient = createNetworkClient(
+  (config?: FetchConfig) => async ({ resourceUrl, method, resource, routeParams, body, queryParams, resourceId }) => {
     // Read Fetch API
     const url = generateUrl({
       resourceUrl,
       resourceId,
       resource,
       routeParams,
-      queryParams
+      queryParams,
     })
     const response: FetchResponse = await window.fetch(url, {
-      ...extraConfig,
       method,
       body: JSON.stringify(body),
-      ...config
+      ...config,
     } as any)
     return response.json()
   }
-}
+)

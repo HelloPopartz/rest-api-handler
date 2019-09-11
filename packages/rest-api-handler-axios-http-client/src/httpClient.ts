@@ -1,10 +1,10 @@
-import { HttpClient, HttpClientRequestData } from '@rest-api-handler/core'
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import { createNetworkClient } from '@rest-api-handler/core'
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
 
 function generateUrl({
   resourceUrl,
   resource = '',
-  routeParams = []
+  routeParams = [],
 }: {
   resourceUrl: string
   resource?: string
@@ -16,36 +16,23 @@ function generateUrl({
   }
   if (routeParams.length !== 0) {
     url += (routeParams.reduce(
-      (result: string, currentValue: string | number) =>
-        `${result}/${currentValue.toString()}`,
+      (result: string, currentValue: string | number) => `${result}/${currentValue.toString()}`,
       ''
     ) as string).replace(/\/$/, '')
   }
   return url
 }
 
-export function axiosHttpClient(
-  axiosInstance: AxiosInstance = axios.create({}),
-  extraConfig?: AxiosRequestConfig
-): HttpClient<AxiosRequestConfig> {
-  return async ({
-    resourceUrl,
-    method,
-    resource,
-    routeParams,
-    body,
-    queryParams,
-    config
-  }: HttpClientRequestData<AxiosRequestConfig>) => {
+export const axiosHttpClient = createNetworkClient(
+  (config?: AxiosRequestConfig) => async ({ resourceUrl, method, resource, routeParams, body, queryParams }) => {
     const url = generateUrl({ resourceUrl, resource, routeParams })
-    const response: AxiosResponse = await axiosInstance.request({
-      ...extraConfig,
+    const response: AxiosResponse = await axios.request({
       baseUrl: url,
       method,
       data: body,
       params: queryParams,
-      ...config
+      ...config,
     } as any)
     return response.data
   }
-}
+)

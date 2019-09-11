@@ -3,20 +3,14 @@ module.exports = {
     'eslint:recommended',
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
+    'prettier',
     'prettier/@typescript-eslint',
-    'plugin:prettier/recommended'
   ],
-  plugins: [
-    'react',
-    'react-hooks',
-    '@typescript-eslint',
-    'eslint-plugin-import',
-    'prettier'
-  ],
+  plugins: ['react', 'react-hooks', '@typescript-eslint', 'eslint-plugin-import'],
   env: {
     browser: true,
     jasmine: true,
-    jest: true
+    jest: true,
   },
   rules: {
     'no-undef': 0,
@@ -42,9 +36,9 @@ module.exports = {
           'private-constructor',
           'public-instance-method',
           'protected-instance-method',
-          'private-instance-method'
-        ]
-      }
+          'private-instance-method',
+        ],
+      },
     ],
     '@typescript-eslint/no-object-literal-type-assertion': 0,
     '@typescript-eslint/no-empty-interface': 0,
@@ -55,8 +49,8 @@ module.exports = {
       {
         ignoreRestSiblings: true,
         varsIgnorePattern: '[rR]eact',
-        argsIgnorePattern: '^_'
-      }
+        argsIgnorePattern: '^_',
+      },
     ],
     'no-extra-boolean-cast': 0,
     'no-undef-init': 1,
@@ -66,19 +60,14 @@ module.exports = {
     'import/order': [
       1,
       {
-        groups: [
-          ['builtin', 'external', 'internal'],
-          ['parent', 'sibling', 'index']
-        ],
-        'newlines-between': 'always'
-      }
+        groups: [['builtin', 'external', 'internal'], ['parent', 'sibling', 'index']],
+        'newlines-between': 'always-and-inside-groups',
+      },
     ],
     'sort-keys': 0,
-    'arrow-parens': 0,
     'no-console': [1, { allow: ['debug', 'info', 'trace'] }],
     '@typescript-eslint/no-inferrable-types': [1, { ignoreParameters: true }],
     'no-fallthrough': 1,
-    'comma-dangle': [1, 'never'],
     '@typescript-eslint/class-name-casing': 1,
     'max-classes-per-file': 2,
     curly: 1,
@@ -103,16 +92,17 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 0,
     'react-hooks/rules-of-hooks': 2,
     'react-hooks/exhaustive-deps': 1,
-    'import/newline-after-import': 1
+    'import/newline-after-import': 1,
+    'max-len': 0,
   },
   settings: {
     react: {
       pragma: 'React',
-      version: 'detect'
+      version: 'detect',
     },
     'import/parsers': {
-      '@typescript-eslint/parser': ['.ts', '.tsx']
-    }
+      '@typescript-eslint/parser': ['.ts', '.tsx'],
+    },
   },
-  parser: '@typescript-eslint/parser'
+  parser: '@typescript-eslint/parser',
 }

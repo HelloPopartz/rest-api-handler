@@ -1,18 +1,11 @@
-import {
-  SubscribeCallback,
-  createActions,
-  createReducer,
-  CacheStoreData
-} from '@rest-api-handler/core'
+import { SubscribeCallback, createActions, createReducer, CacheStoreData } from '@rest-api-handler/core'
 
 import { ActionWithPayload } from './utils/actionTypes'
 import { EnhancedStore, REST_API_STORE_ID } from './restStoreEnhancer.types'
 import { emitWarning, WarningCodes } from './warning.service'
 
-export function createConnectedStore<
-  ResourceType extends { id: string | number }
->(
-  resourceName: string,
+export function createConnectedStore<ResourceType extends { id: string | number }>(
+  storeName: string,
   initialData: CacheStoreData<ResourceType> = {} as CacheStoreData<ResourceType>
 ) {
   // Store data
@@ -20,13 +13,13 @@ export function createConnectedStore<
   let reduxStore: EnhancedStore<any, any>
   let subscriptions = {} as Record<string, SubscribeCallback<ResourceType>>
 
-  const subscribe = (callback: SubscribeCallback<ResourceType>) => {
+  function subscribe(callback: SubscribeCallback<ResourceType>) {
     uId++
     subscriptions[uId] = callback
     return `${uId}`
   }
 
-  const unsubscribe = (id: string) => {
+  function unsubscribe(id: string) {
     if (subscriptions[id]) {
       delete subscriptions[id]
       return true
@@ -35,31 +28,33 @@ export function createConnectedStore<
     }
   }
 
-  const getState = () => {
+  function getState() {
     if (!reduxStore) {
-      emitWarning(WarningCodes.storeNotSet)
+      emitWarning(storeName, WarningCodes.storeNotSet)
       return {}
     } else {
-      return reduxStore.getState()[REST_API_STORE_ID][resourceName]
+      return reduxStore.getState()[REST_API_STORE_ID][storeName]
     }
   }
 
-  const actions = createActions(resourceName)
+  const actions = createActions(storeName)
   const reducer = createReducer<ResourceType>(actions, initialData)
 
-  const dispatch = (action: ActionWithPayload<any, any>) => {
+  function dispatch(action: ActionWithPayload<any, any>) {
     if (!reduxStore) {
-      emitWarning(WarningCodes.storeNotSet)
+      emitWarning(storeName, WarningCodes.storeNotSet)
     } else {
       reduxStore.dispatch(action)
-      Object.values(subscriptions).forEach(callback =>
-        callback(getState(), action)
-      )
+      Object.values(subscriptions).forEach(callback => callback(getState(), action))
     }
   }
 
   const injectReduxStore = (store: EnhancedStore<any, any>) => {
     reduxStore = store
+  }
+
+  function getStoreName() {
+    return storeName
   }
 
   return {
@@ -69,6 +64,7 @@ export function createConnectedStore<
     unsubscribe,
     actions,
     reducer,
-    injectReduxStore
+    getStoreName,
+    injectReduxStore,
   }
 }

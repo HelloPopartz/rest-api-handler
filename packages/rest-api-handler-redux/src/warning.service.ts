@@ -2,16 +2,14 @@
 export enum WarningCodes {
   noResources = 'no-resources',
   keyMismatch = 'key-mismatch',
-  storeNotSet = 'store-not-set'
+  storeNotSet = 'store-not-set',
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function emitWarning(code: WarningCodes, ...data: string[]) {
+export function emitWarning(storeName: string, code: WarningCodes, ...data: string[]) {
   switch (code) {
     case WarningCodes.noResources:
-      console.warn(
-        '[rest-api-handler]: Redux enhancer has no resources. Did you initialize the store?'
-      )
+      console.warn('[rest-api-handler]: Redux enhancer has no resources. Did you initialize the store?')
       break
     case WarningCodes.keyMismatch:
       console.warn(
@@ -19,10 +17,10 @@ export function emitWarning(code: WarningCodes, ...data: string[]) {
       )
       break
     case WarningCodes.storeNotSet:
-      console.warn('[rest-api-handler]: Store not set')
+      console.warn(`[rest-api-handler]: Store ${storeName} not set`)
       break
     // eslint-disable-next-line no-fallthrough
     default:
-      console.warn('[rest-api-handler]: Unknown warning')
+      console.warn(`[rest-api-handler]: Unknown warning in store ${storeName}`)
   }
 }

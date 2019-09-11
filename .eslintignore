@@ -1,5 +1,4 @@
 src/serviceWorker.ts
-dist
 *.test.tsx
 *.svg
 prettier.config.js

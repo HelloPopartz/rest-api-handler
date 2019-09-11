@@ -4,9 +4,7 @@ import { ActionWithPayload, getType, ActionPayload } from '../utils/actionTypes'
 
 export const createReducer = <ResourceType extends { id: string | number }>(
   { update, updateList, clearStore, deleteResource }: RestApiActionHandlers,
-  initialState: CacheStoreData<ResourceType> = {} as CacheStoreData<
-    ResourceType
-  >
+  initialState: CacheStoreData<ResourceType> = {} as CacheStoreData<ResourceType>
 ) => (
   state: CacheStoreData<ResourceType> = initialState,
   action: ActionWithPayload<any, any>
@@ -16,14 +14,14 @@ export const createReducer = <ResourceType extends { id: string | number }>(
       const { id, data }: ActionPayload<typeof update.success> = action.payload
       return {
         ...state,
-        [id]: data
+        [id]: data,
       }
     }
     case getType(updateList.success): {
       const { data }: ActionPayload<typeof updateList.success> = action.payload
       return {
         ...state,
-        ...(data as Record<string, ResourceType>)
+        ...(data as Record<string, ResourceType>),
       }
     }
     case getType(deleteResource): {

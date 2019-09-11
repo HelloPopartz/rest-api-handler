@@ -30,19 +30,19 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^12.0.0",
-    "jest": "^24.8.0",
-    "lerna": "^3.13.4",
+    "jest": "^24.9.0",
+    "lerna": "^3.16.4",
     "microbundle": "^0.11.0",
     "prettier": "^1.17.0",
     "ts-jest": "^24.0.2",
-    "@typescript-eslint/eslint-plugin": "^1.10.2",
-    "@typescript-eslint/parser": "^1.10.2",
+    "@typescript-eslint/eslint-plugin": "^1.13.0",
+    "@typescript-eslint/parser": "^1.13.0",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",
     "eslint-config-react": "^1.1.7",
-    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-prettier": "^3.1.0",
-    "eslint-plugin-react-hooks": "^1.6.0",
-    "typescript": "^3.5.1"
+    "eslint-plugin-react-hooks": "^1.7.0",
+    "typescript": "^3.6.3"
   }
 }

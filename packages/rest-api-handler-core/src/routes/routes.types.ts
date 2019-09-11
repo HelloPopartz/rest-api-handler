@@ -1,23 +1,12 @@
-import { HttpClient } from './httpClient.types'
-
 export enum RouteMethod {
   get = 'GET',
   post = 'POST',
   put = 'PUT',
   patch = 'PATCH',
-  delete = 'DELETE'
-}
-
-export type RouteData<HttpClientOptions = any> = {
-  resourceId?: any
-  body?: any
-  routeParams?: any[]
-  queryParams?: Record<string, any>
-  config?: HttpClientOptions
+  delete = 'DELETE',
 }
 
 export interface RouteInheritableOptions<ResourceType> {
-  httpClient?: HttpClient<any>
   resourceUrl?: string
   partialUpdate?: boolean
   transformData?: (originalData: any) => ResourceType
@@ -30,33 +19,22 @@ export interface RouteOptions<
   TransformRequestFunc extends (...args: any) => RouteData = () => {},
   DataType extends RouteDataType = 'item'
 > extends RouteInheritableOptions<ResourceType> {
-  handler?: TransformRequestFunc extends () => {}
-    ? undefined
-    : TransformRequestFunc
+  handler?: TransformRequestFunc extends () => {} ? undefined : TransformRequestFunc
   resource?: string
   dataType?: DataType
   parseResponse?: (
     response: any,
     requestData: RouteData
-  ) => DataType extends 'none'
-    ? any
-    : DataType extends 'list'
-    ? ResourceType[]
-    : ResourceType
+  ) => DataType extends 'none' ? any : DataType extends 'list' ? ResourceType[] : ResourceType
   method: RouteMethod
 }
 
-export type RouteFinalOptions<
-  ResourceType,
-  TransformRequestFunc extends (...args: any) => RouteData = () => {},
-  DataType extends RouteDataType = 'item'
-> = NonNullable<
-  RouteOptions<ResourceType, TransformRequestFunc, DataType>[keyof RouteOptions<
-    ResourceType,
-    TransformRequestFunc,
-    DataType
-  >]
->
+export type RouteData = {
+  resourceId?: any
+  body?: any
+  routeParams?: any[]
+  queryParams?: Record<string, any>
+}
 
 export type RouteDataWithName = RouteData & { name: string }
 

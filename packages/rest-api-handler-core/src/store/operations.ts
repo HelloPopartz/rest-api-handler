@@ -1,9 +1,9 @@
 import { CacheStore } from './createStore'
 import { GetIdFromResource } from './selectors'
-import { checkIfValidId } from '../handlers'
+import { checkIfValidId } from '../routes/handlers'
 
-export function createOperations<ResourceType>(
-  { dispatch, actions }: CacheStore<ResourceType>,
+export function createOperations<ResourceType extends { id: string | number }>(
+  { dispatch, actions, getStoreName }: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
 ) {
   return {
@@ -16,15 +16,15 @@ export function createOperations<ResourceType>(
         data.forEach((data: ResourceType) => {
           let parsedData = data
           const id = getIdFromResource(data)
-          const validId = checkIfValidId(id)
+          const validId = checkIfValidId(getStoreName(), id)
           // Emit subscription
           if (validId) {
-            mapForStore[id] = parsedData
+            mapForStore[String(id)] = parsedData
           }
         })
         dispatch(
           actions.updateList.success({
-            data: mapForStore
+            data: mapForStore,
           })
         )
       } else {
@@ -35,10 +35,10 @@ export function createOperations<ResourceType>(
         dispatch(
           actions.update.success({
             id,
-            data
+            data,
           })
         )
       }
-    }
+    },
   }
 }

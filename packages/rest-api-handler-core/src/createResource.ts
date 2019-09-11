@@ -1,34 +1,33 @@
-import { createHandlers, Handlers } from './handlers'
+import { createHandlers, GetApiHandlers } from './routes/handlers'
 import {
   CacheStore,
   createStore,
   createSelectors,
   GetIdFromResource,
-  GetResourceById,
-  CacheStoreData
+  GetResource,
+  CacheStoreData,
+  createOperations,
 } from './store'
-import { HttpClient } from './httpClient.types'
-import { generateRoutes } from './routes'
-import { RouteMap } from './routes.types'
-import { createOperations } from './store/operations'
+import { generateRoutes } from './routes/routes'
+import { RouteMap } from './routes/routes.types'
+import { NetworkClient } from './routes/networkClient'
 
 export interface RestApiResource<
   ResourceType extends { id: string | number },
+  NetworkClientConfig,
   Routes extends RouteMap<ResourceType>
 > {
-  api: Handlers<ResourceType, Routes>
   subscribe: CacheStore<ResourceType>['subscribe']
   unsubscribe: CacheStore<ResourceType>['unsubscribe']
   getState: CacheStore<ResourceType>['getState']
   forceUpdate: (data: ResourceType | ResourceType[]) => void
-  selectors: {
-    getIdFromResource: GetIdFromResource<ResourceType>
-    getResourceById: GetResourceById<ResourceType>
-  }
+  getApiHandlers: GetApiHandlers<ResourceType, NetworkClientConfig, Routes>
+  getResource: GetResource<ResourceType>
+  getIdFromResource: GetIdFromResource<ResourceType>
   config: {
     routeConfig: Routes
     store: CacheStore<ResourceType>
-    httpClient: HttpClient<any>
+    networkClient: NetworkClient<NetworkClientConfig>
     partialUpdate: boolean
     transformData: (originalData: any) => ResourceType
   }
@@ -43,42 +42,39 @@ export type ResourceConfig<ResourceType extends { id: string | number }> = {
 
 export function createResource<
   ResourceType extends { id: string | number },
+  NetworkClientConfig = any,
   ExtraRoutes extends RouteMap<ResourceType> = {}
 >(
+  resourceName: string,
   resourceUrl: string,
-  httpClient: HttpClient<any>,
-  extraRoutes: ExtraRoutes,
+  networkClient: NetworkClient<NetworkClientConfig>,
+  extraRoutes: ExtraRoutes = {} as any,
   resourceConfig: ResourceConfig<ResourceType> = {}
 ) {
-  const {
-    partialUpdate = true,
-    customStore,
-    transformData,
-    initialData
-  } = resourceConfig
+  const { partialUpdate = true, customStore, transformData, initialData } = resourceConfig
   const finalRoutes = generateRoutes<ResourceType, ExtraRoutes>(extraRoutes, {
     partialUpdate,
     transformData,
-    httpClient,
-    resourceUrl
+    resourceUrl,
   })
-  const store = customStore || createStore<ResourceType>(initialData)
-  const selectors = createSelectors()
-  const api = createHandlers(finalRoutes, selectors.getIdFromResource, store)
-  const { forceUpdate } = createOperations(store, selectors.getIdFromResource)
+  const store = customStore || createStore<ResourceType>(resourceName, initialData)
+  const { getResource, getIdFromResource } = createSelectors<ResourceType>(store)
+  const { getApiHandlers } = createHandlers(finalRoutes, store, getIdFromResource, networkClient)
+  const { forceUpdate } = createOperations(store, getIdFromResource)
   return {
-    api,
+    getApiHandlers,
     subscribe: store.subscribe,
     unsubscribe: store.unsubscribe,
     getState: store.getState,
     forceUpdate,
-    selectors,
+    getResource,
+    getIdFromResource,
     config: {
       routeConfig: finalRoutes,
-      httpClient,
+      networkClient,
       store,
       partialUpdate,
-      transformData
-    }
-  } as RestApiResource<ResourceType, typeof finalRoutes>
+      transformData,
+    },
+  } as RestApiResource<ResourceType, NetworkClientConfig, typeof finalRoutes>
 }

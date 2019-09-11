@@ -11,10 +11,10 @@ type Todo = {
 export const resource = createConnectedResource<Todo, {}>(
   'todo',
   'https://jsonplaceholder.typicode.com/todos',
-  fetchHttpClient(),
+  fetchHttpClient,
   {},
   {
     partialUpdate: false,
-    initialData: { 1: { id: 1, userId: 200, title: 'wow', completed: false } }
+    initialData: { 1: { id: 1, userId: 200, title: 'wow', completed: false } },
   }
 )

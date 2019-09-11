@@ -1,6 +1,7 @@
+export * from './routes/networkClient'
+export { createRoute } from './routes/routes'
+export * from './routes/routes.types'
 export * from './createResource'
-export * from './httpClient.types'
 export * from './store'
-export * from './routes.types'
 
 export { createResource as default } from './createResource'

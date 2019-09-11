@@ -1,36 +1,33 @@
-import {
-  RouteMap,
-  RouteInheritableOptions,
-  RouteDataType,
-  RouteData,
-  RouteOptions,
-  RouteMethod
-} from './routes.types'
-import { Omit } from './utils/types'
+import { RouteMap, RouteInheritableOptions, RouteDataType, RouteData, RouteOptions, RouteMethod } from './routes.types'
+import { Omit } from '../utils/types'
+
+export function createRoute<
+  ResourceType extends { id: string | number },
+  DataType extends RouteDataType,
+  TransformRequestFunc extends (...args: any) => RouteData = () => {}
+>(
+  route: RouteOptions<ResourceType, TransformRequestFunc, DataType>
+): RouteOptions<ResourceType, TransformRequestFunc, DataType> {
+  return route
+}
 
 export function generateRoutes<
   ResourceType extends { id: string | number },
   ExtraRoutes extends RouteMap<ResourceType>
->(
-  routes: ExtraRoutes,
-  inheritableConfig: RouteInheritableOptions<ResourceType>
-) {
-  function createRoute<
+>(routes: ExtraRoutes, inheritableConfig: RouteInheritableOptions<ResourceType>) {
+  function createDefaultRoute<
     DataType extends RouteDataType,
     TransformRequestFunc extends (...args: any) => RouteData = () => {}
   >(
-    route: Omit<
-      RouteOptions<ResourceType, TransformRequestFunc, DataType>,
-      'resourceUrl' | 'httpClient'
-    >
+    route: Omit<RouteOptions<ResourceType, TransformRequestFunc, DataType>, 'resourceUrl'>
   ): RouteOptions<ResourceType, TransformRequestFunc, DataType> {
     return {
       ...inheritableConfig,
-      ...route
+      ...route,
     }
   }
 
-  const list = createRoute({
+  const list = createDefaultRoute({
     method: RouteMethod.get,
     dataType: 'list',
     parseResponse: (response: any): ResourceType[] => {
@@ -40,63 +37,63 @@ export function generateRoutes<
         return response.results
       }
       return []
-    }
+    },
   })
-  const create = createRoute({
+  const create = createDefaultRoute({
     method: RouteMethod.post,
     dataType: 'item',
     handler: (data: Omit<ResourceType, 'id'>) => ({
-      body: data
-    })
+      body: data,
+    }),
   })
-  const get = createRoute({
+  const get = createDefaultRoute({
     method: RouteMethod.get,
     dataType: 'item',
     handler: (id: ResourceType['id']) => {
       const parsedId = id
       return {
-        resourceId: parsedId
+        resourceId: parsedId,
       }
-    }
+    },
   })
-  const patch = createRoute({
+  const patch = createDefaultRoute({
     method: RouteMethod.patch,
     dataType: 'item',
     handler: (id: ResourceType['id'], data: Partial<ResourceType>) => {
       const parsedId = id
       return {
         resourceId: parsedId,
-        body: data
+        body: data,
       }
-    }
+    },
   })
-  const put = createRoute({
+  const put = createDefaultRoute({
     method: RouteMethod.put,
     dataType: 'item',
     handler: (id: ResourceType['id'], data: ResourceType) => {
       const parsedId = id
       return {
         resourceId: parsedId,
-        body: data
+        body: data,
       }
-    }
+    },
   })
-  const deleteApi = createRoute({
+  const remove = createDefaultRoute({
     method: RouteMethod.delete,
     dataType: 'none',
     handler: (id: ResourceType['id']) => {
       const parsedId = id
       return {
-        resourceId: parsedId
+        resourceId: parsedId,
       }
-    }
+    },
   })
 
   let extraRoutes = {}
   Object.keys(routes).forEach(routeKey => {
     extraRoutes[routeKey] = {
       ...inheritableConfig,
-      ...routes[routeKey]
+      ...routes[routeKey],
     }
   })
 
@@ -106,7 +103,7 @@ export function generateRoutes<
     put,
     patch,
     create,
-    delete: deleteApi,
-    ...(extraRoutes as ExtraRoutes)
+    remove,
+    ...(extraRoutes as ExtraRoutes),
   }
 }
