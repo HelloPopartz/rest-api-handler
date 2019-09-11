@@ -1,4 +1,10 @@
-import { checkIfValidId, emitRequestAction, emitDeleteAction, transformResource, emitUpdateItemAction } from '../handlers'
+import {
+  checkIfValidId,
+  emitRequestAction,
+  emitDeleteAction,
+  transformResource,
+  emitUpdateItemAction,
+} from '../handlers'
 
 import * as Messages from '../../messages'
 
@@ -96,7 +102,6 @@ describe('#handlers', () => {
     })
   })
   describe('#transformResource', () => {
-   
     it('If "parseResponse" is available, it parses the data', () => {
       const expectedResult = { id: 1 }
       const response = {}
@@ -177,13 +182,11 @@ describe('#handlers', () => {
     })
   })
   describe('#emitUpdateItemAction', () => {
-
     it('If data transformation is successful, it emits a "success update" action', () => {
       const response = { id: 1, a: 3 }
       const routeData = {} as any
-      const routeConfig = {
-      } as any
-      const store = createStoreMock() 
+      const routeConfig = {} as any
+      const store = createStoreMock()
       const result = emitUpdateItemAction(response, routeData, routeConfig, store as any, getIdFromResourceMock)
       expect(result).toBe(response)
       expect(store.actions.update.success).toHaveBeenCalled()
@@ -192,10 +195,10 @@ describe('#handlers', () => {
       // Invalid id, should fail
       const response = { a: 3 }
       const routeData = {} as any
-      const routeConfig = {
-      } as any
-      const store = createStoreMock() 
+      const routeConfig = {} as any
+      const store = createStoreMock()
       emitUpdateItemAction(response, routeData, routeConfig, store as any, getIdFromResourceMock)
       expect(store.actions.update.cancel).toHaveBeenCalled()
     })
+  })
 })

@@ -43,7 +43,7 @@ export type ResourceConfig<ResourceType extends { id: string | number }> = {
 export function createResource<
   ResourceType extends { id: string | number },
   NetworkClientConfig = any,
-  ExtraRoutes extends RouteMap<ResourceType> = {}
+  ExtraRoutes extends RouteMap<any> = {}
 >(
   resourceName: string,
   resourceUrl: string,

@@ -7,7 +7,13 @@ import { NetworkClient } from './networkClient'
 export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
   [P in keyof Routes]: (
     ...params: Routes[P]['handler'] extends undefined ? [] : Parameters<NonNullable<Routes[P]['handler']>>
-  ) => Promise<ReturnType<NonNullable<Routes[P]['parseResponse']>>>
+  ) => Promise<
+    NonNullable<Routes[P]['dataType']> extends 'none'
+      ? any
+      : NonNullable<Routes[P]['dataType']> extends 'list'
+      ? ResourceType[]
+      : ResourceType
+  >
 }
 
 export type GetApiHandlers<ResourceType, NetworkClientConfig, Routes extends RouteMap<ResourceType>> = (

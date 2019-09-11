@@ -32,7 +32,6 @@ describe('#createResource', function() {
             routeParams: [parsedId],
           }
         },
-        transformData: (str: string) => ('hola' as any) as TestResource,
       }),
     }
     const resource = createResource<TestResource, undefined, typeof routes>('test', 'testUrl', mockedHttpClient, routes)
