@@ -7,8 +7,8 @@ import { isEmpty } from './utils/object'
 
 es6Promise.polyfill()
 
-export type FetchConfig = Partial<Request>
-export type FetchResponse = Response
+export type FetchHttpConfig = Partial<Request>
+export type FetchHttpResponse = Response
 
 function generateUrl({
   resourceUrl,
@@ -43,7 +43,15 @@ function generateUrl({
 }
 
 export const fetchHttpClient = createNetworkClient(
-  (config?: FetchConfig) => async ({ resourceUrl, method, resource, routeParams, body, queryParams, resourceId }) => {
+  (config?: FetchHttpConfig) => async ({
+    resourceUrl,
+    method,
+    resource,
+    routeParams,
+    body,
+    queryParams,
+    resourceId,
+  }) => {
     // Read Fetch API
     const url = generateUrl({
       resourceUrl,
@@ -52,7 +60,7 @@ export const fetchHttpClient = createNetworkClient(
       routeParams,
       queryParams,
     })
-    const response: FetchResponse = await window.fetch(url, {
+    const response: FetchHttpResponse = await window.fetch(url, {
       method,
       body: JSON.stringify(body),
       ...config,

@@ -1,6 +1,5 @@
 import { createConnectedResource } from '@rest-api-handler/redux'
-import { fetchHttpClient } from '@rest-api-handler/fetch-http-client'
-import { createRoute, RouteMethod } from '@rest-api-handler/core'
+import { fetchHttpClient, FetchHttpClient } from '@rest-api-handler/fetch-http-client'
 
 type Todo = {
   userId: number
@@ -9,8 +8,13 @@ type Todo = {
   completed: boolean
 }
 
-export const resource = createConnectedResource<Todo>(
+export const resource = createConnectedResource<Todo, FetchHttpClient>(
   'todo',
   'https://jsonplaceholder.typicode.com/todos',
-  fetchHttpClient
+  fetchHttpClient,
+  {},
+  {
+    partialUpdate: false,
+    initialData: { 1: { id: 1, userId: 200, title: 'wow', completed: false } },
+  }
 )
