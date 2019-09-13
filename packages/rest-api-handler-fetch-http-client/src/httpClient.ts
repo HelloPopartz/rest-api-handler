@@ -60,3 +60,5 @@ export const fetchHttpClient = createNetworkClient(
     return response.json()
   }
 )
+
+export type FetchHttpClient = typeof fetchHttpClient

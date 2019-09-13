@@ -36,3 +36,5 @@ export const axiosHttpClient = createNetworkClient(
     return response.data
   }
 )
+
+export type AxiosHttpClient = typeof axiosHttpClient

@@ -18,9 +18,9 @@ import { createSelectors, GetAllResources } from './createSelectors'
 
 export interface ConnectedRestApiResource<
   ResourceType extends Resource,
-  NetworkClientConfig,
+  UserClientConfig extends NetworkClient<any>,
   Routes extends RouteMap<ResourceType>
-> extends RestApiResource<ResourceType, NetworkClientConfig, Routes> {
+> extends RestApiResource<ResourceType, UserClientConfig, Routes> {
   getAllResources: GetAllResources<ResourceType>
   getIdFromResource: GetIdFromResource<ResourceType>
   getResource: GetResource<ResourceType>
@@ -32,12 +32,12 @@ export interface ConnectedRestApiResource<
 
 export function createConnectedResource<
   ResourceType extends Resource,
-  NetworkClientConfig = {},
+  UserClientConfig extends NetworkClient<any> = NetworkClient<void>,
   ExtraRoutes extends RouteMap<any> = {}
 >(
   storeId: string,
   resourceUrl: string,
-  networkClient: NetworkClient<NetworkClientConfig>,
+  networkClient: UserClientConfig,
   extraRoutes: ExtraRoutes = {} as ExtraRoutes,
   { initialData, ...resourceConfig }: Omit<ResourceConfig<ResourceType>, 'customStore'> = {}
 ) {
@@ -55,5 +55,5 @@ export function createConnectedResource<
     actions,
     reducer,
     injectReduxStore,
-  } as ConnectedRestApiResource<ResourceType, NetworkClientConfig, typeof restResource.config.routeConfig>
+  } as ConnectedRestApiResource<ResourceType, UserClientConfig, typeof restResource.config.routeConfig>
 }

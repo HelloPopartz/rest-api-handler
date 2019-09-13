@@ -34,7 +34,12 @@ describe('#createResource', function() {
         },
       }),
     }
-    const resource = createResource<TestResource, undefined, typeof routes>('test', 'testUrl', mockedHttpClient, routes)
+    const resource = createResource<TestResource, typeof mockedHttpClient, typeof routes>(
+      'test',
+      'testUrl',
+      mockedHttpClient,
+      routes
+    )
     const { customRoute } = resource.getApiHandlers()
     expect(customRoute).toBeTruthy()
   })

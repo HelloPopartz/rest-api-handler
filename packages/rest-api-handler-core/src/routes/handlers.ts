@@ -18,9 +18,9 @@ export type Handlers<ResourceType extends Resource, Routes extends RouteMap<Reso
 
 export type GetApiHandlers<
   ResourceType extends Resource,
-  NetworkClientConfig,
+  UserNetworkClient extends NetworkClient<any>,
   Routes extends RouteMap<ResourceType>
-> = (config?: NetworkClientConfig) => Handlers<ResourceType, Routes>
+> = (config?: Parameters<UserNetworkClient>) => Handlers<ResourceType, Routes>
 
 export function checkIfValidId(storeName: string, id: string | number) {
   if (id === null || id === undefined || (typeof id !== 'string' && typeof id !== 'number')) {
@@ -254,16 +254,20 @@ function generateHandlersFromRoute<ResourceType extends Resource, NetworkClientC
   return apiHandler
 }
 
-export function createHandlers<ResourceType extends Resource, NetworkClientConfig, Routes extends RouteMap<any>>(
+export function createHandlers<
+  ResourceType extends Resource,
+  UserNetworkClient extends NetworkClient<any>,
+  Routes extends RouteMap<any>
+>(
   routes: Routes,
   store: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>,
-  networkClient: NetworkClient<NetworkClientConfig>
+  networkClient: UserNetworkClient
 ): {
-  getApiHandlers: GetApiHandlers<ResourceType, NetworkClientConfig, Routes>
+  getApiHandlers: GetApiHandlers<ResourceType, UserNetworkClient, Routes>
 } {
   const handlers = mapObject<any, Routes, any>(routes, (route, routeName) =>
-    generateHandlersFromRoute<ResourceType, NetworkClientConfig>(
+    generateHandlersFromRoute<ResourceType, UserNetworkClient>(
       route,
       routeName,
       store,
@@ -271,7 +275,7 @@ export function createHandlers<ResourceType extends Resource, NetworkClientConfi
       networkClient
     )
   )
-  function getApiHandlers(config: NetworkClientConfig): Handlers<ResourceType, Routes> {
+  function getApiHandlers(config: Parameters<UserNetworkClient>): Handlers<ResourceType, Routes> {
     return mapObject<any, typeof handlers, any>(handlers, handler => handler(config))
   }
   return {

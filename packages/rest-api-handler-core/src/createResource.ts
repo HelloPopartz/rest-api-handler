@@ -15,20 +15,20 @@ import { NetworkClient } from './routes/networkClient'
 
 export interface RestApiResource<
   ResourceType extends Resource,
-  NetworkClientConfig,
+  UserNetworkClient extends NetworkClient<any>,
   Routes extends RouteMap<ResourceType>
 > {
   subscribe: CacheStore<ResourceType>['subscribe']
   unsubscribe: CacheStore<ResourceType>['unsubscribe']
   getState: CacheStore<ResourceType>['getState']
   forceUpdate: (data: ResourceType | ResourceType[]) => void
-  getApiHandlers: GetApiHandlers<ResourceType, NetworkClientConfig, Routes>
+  getApiHandlers: GetApiHandlers<ResourceType, UserNetworkClient, Routes>
   getResource: GetResource<ResourceType>
   getIdFromResource: GetIdFromResource<ResourceType>
   config: {
     routeConfig: Routes
     store: CacheStore<ResourceType>
-    networkClient: NetworkClient<NetworkClientConfig>
+    networkClient: UserNetworkClient
     partialUpdate: boolean
     transformData: (originalData: any) => ResourceType
   }
@@ -43,12 +43,12 @@ export type ResourceConfig<ResourceType extends Resource> = {
 
 export function createResource<
   ResourceType extends Resource,
-  NetworkClientConfig = any,
+  UserNetworkClient extends NetworkClient<any> = NetworkClient<void>,
   ExtraRoutes extends RouteMap<any> = {}
 >(
   resourceName: string,
   resourceUrl: string,
-  networkClient: NetworkClient<NetworkClientConfig>,
+  networkClient: UserNetworkClient,
   extraRoutes: ExtraRoutes = {} as ExtraRoutes,
   resourceConfig: ResourceConfig<ResourceType> = {}
 ) {
@@ -77,5 +77,5 @@ export function createResource<
       partialUpdate,
       transformData,
     },
-  } as RestApiResource<ResourceType, NetworkClientConfig, typeof finalRoutes>
+  } as RestApiResource<ResourceType, UserNetworkClient, typeof finalRoutes>
 }
