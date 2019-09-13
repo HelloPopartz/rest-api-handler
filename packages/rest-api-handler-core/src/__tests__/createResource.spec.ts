@@ -25,7 +25,12 @@ describe('#createResource', function() {
       customRoute: createRoute({
         method: RouteMethod.get,
         dataType: 'list',
-        handler: (id: string | number) => {
+        handler: (id?: string | number) => {
+          if (!id) {
+            return {
+              routeParams: [2],
+            }
+          }
           const parsedId = id.toString()
           return {
             resourceId: parsedId,

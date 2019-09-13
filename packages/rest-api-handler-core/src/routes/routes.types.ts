@@ -16,10 +16,10 @@ export type RouteDataType = 'item' | 'list' | 'none' | 'delete'
 
 export interface RouteOptions<
   ResourceType,
-  TransformRequestFunc extends (...args: any) => RouteData = () => {},
+  TransformRequestFunc extends (...args: any) => RouteData,
   DataType extends RouteDataType = 'item'
 > extends RouteInheritableOptions<ResourceType> {
-  handler?: TransformRequestFunc extends () => {} ? undefined : TransformRequestFunc
+  handler?: TransformRequestFunc
   resource?: string
   dataType?: DataType
   parseResponse?: (
