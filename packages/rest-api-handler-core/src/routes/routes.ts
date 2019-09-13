@@ -1,23 +1,24 @@
 import { RouteMap, RouteInheritableOptions, RouteDataType, RouteData, RouteOptions, RouteMethod } from './routes.types'
 import { Omit } from '../utils/types'
+import { Resource } from '../store'
 
 export function createRoute<
-  ResourceType extends { id: string | number },
+  ResourceType extends Resource,
   DataType extends RouteDataType,
-  TransformRequestFunc extends (...args: any) => RouteData = () => {}
+  TransformRequestFunc extends (...args: any) => RouteData<ResourceType> = () => {}
 >(
   route: RouteOptions<ResourceType, TransformRequestFunc, DataType>
 ): RouteOptions<ResourceType, TransformRequestFunc, DataType> {
   return route
 }
 
-export function generateRoutes<
-  ResourceType extends { id: string | number },
-  ExtraRoutes extends RouteMap<ResourceType>
->(routes: ExtraRoutes, inheritableConfig: RouteInheritableOptions<ResourceType>) {
+export function generateRoutes<ResourceType extends Resource, ExtraRoutes extends RouteMap<ResourceType>>(
+  routes: ExtraRoutes,
+  inheritableConfig: RouteInheritableOptions<ResourceType>
+) {
   function createDefaultRoute<
     DataType extends RouteDataType,
-    TransformRequestFunc extends (...args: any) => RouteData = () => {}
+    TransformRequestFunc extends (...args: any) => RouteData<ResourceType> = () => {}
   >(
     route: Omit<RouteOptions<ResourceType, TransformRequestFunc, DataType>, 'resourceUrl'>
   ): RouteOptions<ResourceType, TransformRequestFunc, DataType> {

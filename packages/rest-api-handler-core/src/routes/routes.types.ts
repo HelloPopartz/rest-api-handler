@@ -1,3 +1,5 @@
+import { Resource } from '../store'
+
 export enum RouteMethod {
   get = 'GET',
   post = 'POST',
@@ -15,8 +17,8 @@ export interface RouteInheritableOptions<ResourceType> {
 export type RouteDataType = 'item' | 'list' | 'none' | 'delete'
 
 export interface RouteOptions<
-  ResourceType,
-  TransformRequestFunc extends (...args: any) => RouteData,
+  ResourceType extends Resource,
+  TransformRequestFunc extends (...args: any) => RouteData<ResourceType>,
   DataType extends RouteDataType = 'item'
 > extends RouteInheritableOptions<ResourceType> {
   handler?: TransformRequestFunc
@@ -24,20 +26,20 @@ export interface RouteOptions<
   dataType?: DataType
   parseResponse?: (
     response: any,
-    requestData: RouteData
+    requestData: RouteData<ResourceType>
   ) => DataType extends 'none' ? any : DataType extends 'list' ? ResourceType[] : ResourceType
   method: RouteMethod
 }
 
-export type RouteData = {
+export type RouteData<ResourceType> = {
   resourceId?: any
   body?: any
   routeParams?: any[]
   queryParams?: Record<string, any>
 }
 
-export type RouteDataWithName = RouteData & { name: string }
+export type RouteDataWithName<ResourceType extends Resource> = RouteData<ResourceType> & { name: string }
 
-export type RouteMap<ResourceType> = {
+export type RouteMap<ResourceType extends Resource> = {
   [K: string]: RouteOptions<ResourceType, any, any>
 }

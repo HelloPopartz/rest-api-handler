@@ -1,8 +1,9 @@
 import { CacheStore } from './createStore'
 import { GetIdFromResource } from './selectors'
 import { checkIfValidId } from '../routes/handlers'
+import { Resource } from './types'
 
-export function createOperations<ResourceType extends { id: string | number }>(
+export function createOperations<ResourceType extends Resource>(
   { dispatch, actions, getStoreName }: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
 ) {

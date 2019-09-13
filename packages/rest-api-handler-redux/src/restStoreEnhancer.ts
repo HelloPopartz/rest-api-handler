@@ -7,13 +7,14 @@ import {
   StoreEnhancerStoreCreator,
   combineReducers,
 } from 'redux'
+import { Resource } from '@rest-api-handler/core'
 
 import { ConnectedRestApiResource } from './connectedRestResource'
 import { emitWarning, WarningCodes } from './warning.service'
 import { RestApiEntitiesState, REST_API_STORE_ID, EnhancedStore } from './restStoreEnhancer.types'
 import { isEmpty } from './utils/objects'
 
-function generateReducers<ResourceType extends { id: string | number }>(
+function generateReducers<ResourceType extends Resource>(
   restResources: Record<string, ConnectedRestApiResource<ResourceType, any, any>>
 ) {
   const restResourcesReducers = {}
@@ -27,7 +28,7 @@ function generateReducers<ResourceType extends { id: string | number }>(
   return combineReducers<RestApiEntitiesState>(restResourcesReducers as any)
 }
 
-function injectReduxToResources<ResourceType extends { id: string | number }>(
+function injectReduxToResources<ResourceType extends Resource>(
   store: EnhancedStore<any, any>,
   restResources: Record<string, ConnectedRestApiResource<ResourceType, any, any>>
 ) {

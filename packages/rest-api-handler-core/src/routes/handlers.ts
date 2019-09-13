@@ -1,10 +1,10 @@
 import { mapObject } from '../utils/object'
-import { CacheStore, GetIdFromResource } from '../store'
+import { CacheStore, GetIdFromResource, Resource } from '../store'
 import { emitWarning, WarningCodes, createRestApiHandlerError } from '../messages'
 import { RouteMap, RouteOptions, RouteDataWithName } from './routes.types'
 import { NetworkClient } from './networkClient'
 
-export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
+export type Handlers<ResourceType extends Resource, Routes extends RouteMap<ResourceType>> = {
   [P in keyof Routes]: (
     ...params: Routes[P]['handler'] extends undefined ? [] : Parameters<NonNullable<Routes[P]['handler']>>
   ) => Promise<
@@ -16,9 +16,11 @@ export type Handlers<ResourceType, Routes extends RouteMap<ResourceType>> = {
   >
 }
 
-export type GetApiHandlers<ResourceType, NetworkClientConfig, Routes extends RouteMap<ResourceType>> = (
-  config?: NetworkClientConfig
-) => Handlers<ResourceType, Routes>
+export type GetApiHandlers<
+  ResourceType extends Resource,
+  NetworkClientConfig,
+  Routes extends RouteMap<ResourceType>
+> = (config?: NetworkClientConfig) => Handlers<ResourceType, Routes>
 
 export function checkIfValidId(storeName: string, id: string | number) {
   if (id === null || id === undefined || (typeof id !== 'string' && typeof id !== 'number')) {
@@ -29,8 +31,8 @@ export function checkIfValidId(storeName: string, id: string | number) {
   }
 }
 
-export function emitRequestAction<ResourceType extends { id: string | number }>(
-  routeData: RouteDataWithName,
+export function emitRequestAction<ResourceType extends Resource>(
+  routeData: RouteDataWithName<ResourceType>,
   { dataType }: RouteOptions<ResourceType, any, any>,
   { dispatch, actions: { update, updateList } }: CacheStore<ResourceType>
 ) {
@@ -42,8 +44,8 @@ export function emitRequestAction<ResourceType extends { id: string | number }>(
   }
 }
 
-export function emitDeleteAction<ResourceType extends { id: string | number }>(
-  routeData: RouteDataWithName,
+export function emitDeleteAction<ResourceType extends Resource>(
+  routeData: RouteDataWithName<ResourceType>,
   { dispatch, actions: { deleteResource } }: CacheStore<ResourceType>
 ) {
   const { resourceId } = routeData
@@ -58,9 +60,9 @@ export function emitDeleteAction<ResourceType extends { id: string | number }>(
   )
 }
 
-export function transformResource<ResourceType extends { id: string | number }>(
+export function transformResource<ResourceType extends Resource>(
   response: any,
-  routeData: RouteDataWithName,
+  routeData: RouteDataWithName<ResourceType>,
   { parseResponse, transformData, partialUpdate }: RouteOptions<ResourceType, any, any>,
   { getStoreName, getState }: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
@@ -96,9 +98,9 @@ export function transformResource<ResourceType extends { id: string | number }>(
   }
 }
 
-export function emitUpdateItemAction<ResourceType extends { id: string | number }>(
+export function emitUpdateItemAction<ResourceType extends Resource>(
   response: any,
-  routeData: RouteDataWithName,
+  routeData: RouteDataWithName<ResourceType>,
   routeConfig: RouteOptions<ResourceType, any, any>,
   store: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
@@ -123,9 +125,9 @@ export function emitUpdateItemAction<ResourceType extends { id: string | number 
   return data
 }
 
-export function emitUpdateListAction<ResourceType extends { id: string | number }>(
+export function emitUpdateListAction<ResourceType extends Resource>(
   response: any,
-  routeData: RouteDataWithName,
+  routeData: RouteDataWithName<ResourceType>,
   { parseResponse, ...routeConfig }: RouteOptions<ResourceType, any, any>,
   store: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
@@ -177,9 +179,9 @@ export function emitUpdateListAction<ResourceType extends { id: string | number 
   return result
 }
 
-export function emitErrorAction<ResourceType extends { id: string | number }>(
+export function emitErrorAction<ResourceType extends Resource>(
   e: Error,
-  routeData: RouteDataWithName,
+  routeData: RouteDataWithName<ResourceType>,
   { dataType }: RouteOptions<ResourceType, any, any>,
   { dispatch, actions: { updateList, update } }: CacheStore<ResourceType>
 ) {
@@ -202,7 +204,7 @@ export function emitErrorAction<ResourceType extends { id: string | number }>(
   }
 }
 
-function generateHandlersFromRoute<ResourceType extends { id: string | number }, NetworkClientConfig>(
+function generateHandlersFromRoute<ResourceType extends Resource, NetworkClientConfig>(
   routeConfig: RouteOptions<ResourceType, any, any>,
   routeName: string | number | symbol,
   store: CacheStore<ResourceType>,
@@ -252,11 +254,7 @@ function generateHandlersFromRoute<ResourceType extends { id: string | number },
   return apiHandler
 }
 
-export function createHandlers<
-  ResourceType extends { id: string | number },
-  NetworkClientConfig,
-  Routes extends RouteMap<any>
->(
+export function createHandlers<ResourceType extends Resource, NetworkClientConfig, Routes extends RouteMap<any>>(
   routes: Routes,
   store: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>,

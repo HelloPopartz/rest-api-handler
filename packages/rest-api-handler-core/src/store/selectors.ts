@@ -1,19 +1,20 @@
 import { CacheStoreData, CacheStore } from './createStore'
 import { createRestApiHandlerError } from '../messages'
+import { Resource } from './types'
 
-export type GetIdFromResource<ResourceType extends { id: string | number }> = (data: ResourceType) => ResourceType['id']
+export type GetIdFromResource<ResourceType extends Resource> = (data: ResourceType) => ResourceType['id']
 
-export type GetResource<ResourceType extends { id: string | number }> = (
+export type GetResource<ResourceType extends Resource> = (
   state: CacheStoreData<ResourceType>,
   id: ResourceType['id']
 ) => ResourceType
 
-export type Selectors<ResourceType extends { id: string | number }> = {
+export type Selectors<ResourceType extends Resource> = {
   getResource: GetResource<ResourceType>
   getIdFromResource: GetIdFromResource<ResourceType>
 }
 
-export function createSelectors<ResourceType extends { id: string | number }>({
+export function createSelectors<ResourceType extends Resource>({
   getStoreName,
 }: CacheStore<ResourceType>): Selectors<ResourceType> {
   function getResource(state: CacheStoreData<ResourceType>, id: ResourceType['id']) {

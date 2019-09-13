@@ -3,7 +3,7 @@ import { RouteOptions, RouteData } from './routes.types'
 export type NetworkClientRequestData = {
   resourceUrl: string
 } & Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
-  RouteData
+  RouteData<any>
 
 export type NetworkClient<NetworkClientConfig> = (
   clientConfig: NetworkClientConfig

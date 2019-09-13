@@ -7,13 +7,14 @@ import {
   GetResource,
   CacheStoreData,
   createOperations,
+  Resource,
 } from './store'
 import { generateRoutes } from './routes/routes'
 import { RouteMap } from './routes/routes.types'
 import { NetworkClient } from './routes/networkClient'
 
 export interface RestApiResource<
-  ResourceType extends { id: string | number },
+  ResourceType extends Resource,
   NetworkClientConfig,
   Routes extends RouteMap<ResourceType>
 > {
@@ -33,7 +34,7 @@ export interface RestApiResource<
   }
 }
 
-export type ResourceConfig<ResourceType extends { id: string | number }> = {
+export type ResourceConfig<ResourceType extends Resource> = {
   partialUpdate?: boolean
   transformData?: (originalData: any) => ResourceType
   customStore?: CacheStore<ResourceType>
@@ -41,14 +42,14 @@ export type ResourceConfig<ResourceType extends { id: string | number }> = {
 }
 
 export function createResource<
-  ResourceType extends { id: string | number },
+  ResourceType extends Resource,
   NetworkClientConfig = any,
   ExtraRoutes extends RouteMap<any> = {}
 >(
   resourceName: string,
   resourceUrl: string,
   networkClient: NetworkClient<NetworkClientConfig>,
-  extraRoutes: ExtraRoutes = {} as any,
+  extraRoutes: ExtraRoutes = {} as ExtraRoutes,
   resourceConfig: ResourceConfig<ResourceType> = {}
 ) {
   const { partialUpdate = true, customStore, transformData, initialData } = resourceConfig

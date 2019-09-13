@@ -1,4 +1,4 @@
-import { RestApiResource, CacheStore } from '@rest-api-handler/core'
+import { RestApiResource, CacheStore, Resource } from '@rest-api-handler/core'
 import { useEffect, useReducer, useCallback } from 'react'
 
 import { getType } from './utils/actionTypes'
@@ -17,7 +17,7 @@ type UseRestApiActions<ResourceType> =
   | { type: 'FETCH_FAILURE'; payload: Error }
   | { type: 'REFRESH' }
 
-function getDataFromStore<ResourceType extends { id: string | number }>(
+function getDataFromStore<ResourceType extends Resource>(
   getState: CacheStore<ResourceType>['getState'],
   getResource: RestApiResource<ResourceType, any, any>['getResource'],
   ids: (string | number)[] | undefined

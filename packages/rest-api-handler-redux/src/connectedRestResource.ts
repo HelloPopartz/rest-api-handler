@@ -7,6 +7,7 @@ import {
   RestApiActionHandlers,
   GetIdFromResource,
   GetResource,
+  Resource,
 } from '@rest-api-handler/core'
 import { Reducer } from 'redux'
 
@@ -16,7 +17,7 @@ import { EnhancedStore } from './restStoreEnhancer.types'
 import { createSelectors, GetAllResources } from './createSelectors'
 
 export interface ConnectedRestApiResource<
-  ResourceType extends { id: string | number },
+  ResourceType extends Resource,
   NetworkClientConfig,
   Routes extends RouteMap<ResourceType>
 > extends RestApiResource<ResourceType, NetworkClientConfig, Routes> {
@@ -30,14 +31,14 @@ export interface ConnectedRestApiResource<
 }
 
 export function createConnectedResource<
-  ResourceType extends { id: string | number },
+  ResourceType extends Resource,
   NetworkClientConfig = {},
-  ExtraRoutes extends RouteMap<ResourceType> = {}
+  ExtraRoutes extends RouteMap<any> = {}
 >(
   storeId: string,
   resourceUrl: string,
   networkClient: NetworkClient<NetworkClientConfig>,
-  extraRoutes: ExtraRoutes,
+  extraRoutes: ExtraRoutes = {} as ExtraRoutes,
   { initialData, ...resourceConfig }: Omit<ResourceConfig<ResourceType>, 'customStore'> = {}
 ) {
   const internalStore = createConnectedStore<ResourceType>(storeId, initialData)
