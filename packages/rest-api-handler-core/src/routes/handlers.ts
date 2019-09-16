@@ -204,7 +204,7 @@ export function emitErrorAction<ResourceType extends Resource>(
   }
 }
 
-function generateHandlersFromRoute<ResourceType extends Resource, UserNetworkClient extends NetworkClient<any>>(
+function generateHandlersFromRoute<ResourceType extends Resource, UserNetworkClient extends NetworkClient<any[]>>(
   routeConfig: RouteOptions<ResourceType, any, any>,
   routeName: string | number | symbol,
   store: CacheStore<ResourceType>,
