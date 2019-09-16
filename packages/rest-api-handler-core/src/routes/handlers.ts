@@ -215,42 +215,43 @@ function generateHandlersFromRoute<ResourceType extends Resource, UserNetworkCli
   const { getStoreName } = store
   const storeName = getStoreName()
 
-  const apiHandler = (...config: Parameters<UserNetworkClient>) => async (
-    ...params: Parameters<NonNullable<typeof handler>>
-  ) => {
-    // Parse request data
-    const requestData = handler(...params) || {}
-    const routeData = {
-      method,
-      resource,
-      resourceUrl,
-      ...requestData,
-      name: routeName,
-    }
-
-    // If we are updating a particular entity, emit an action
-    emitRequestAction(routeData, dataType, store)
-
-    // Make api call
-    try {
-      const response = await networkClient(config)({
+  const apiHandler = (config: Parameters<UserNetworkClient>) => {
+    const networkClientWithConfig = networkClient(...config)
+    return async (...params: Parameters<NonNullable<typeof handler>>) => {
+      // Parse request data
+      const requestData = handler(...params) || {}
+      const routeData = {
         method,
         resource,
         resourceUrl,
         ...requestData,
-      })
-
-      switch (dataType) {
-        case 'delete':
-          return emitDeleteAction(routeData, store)
-        case 'item':
-          return emitUpdateItemAction(response, routeData, routeConfig, store, getIdFromResource)
-        default:
-          return emitUpdateListAction(response, routeData, routeConfig, store, getIdFromResource)
+        name: routeName,
       }
-    } catch (e) {
-      const error = createRestApiHandlerError(storeName, e)
-      emitErrorAction(error, routeData, routeConfig, store)
+
+      // If we are updating a particular entity, emit an action
+      emitRequestAction(routeData, dataType, store)
+
+      // Make api call
+      try {
+        const response = await networkClientWithConfig({
+          method,
+          resource,
+          resourceUrl,
+          ...requestData,
+        })
+
+        switch (dataType) {
+          case 'delete':
+            return emitDeleteAction(routeData, store)
+          case 'item':
+            return emitUpdateItemAction(response, routeData, routeConfig, store, getIdFromResource)
+          default:
+            return emitUpdateListAction(response, routeData, routeConfig, store, getIdFromResource)
+        }
+      } catch (e) {
+        const error = createRestApiHandlerError(storeName, e)
+        emitErrorAction(error, routeData, routeConfig, store)
+      }
     }
   }
   return apiHandler
