@@ -1,5 +1,5 @@
 import { createRoute } from '../routes/routes'
-import { RouteMethod } from '../routes/routes.types'
+import { RouteMethod, RouteData } from '../routes/routes.types'
 import { createResource } from '../createResource'
 
 type TestResource = {

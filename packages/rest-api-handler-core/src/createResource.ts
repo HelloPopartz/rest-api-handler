@@ -15,7 +15,7 @@ import { NetworkClient } from './routes/networkClient'
 
 export interface RestApiResource<
   ResourceType extends Resource,
-  UserNetworkClient extends NetworkClient<any>,
+  UserNetworkClient extends NetworkClient<any[]>,
   Routes extends RouteMap<ResourceType>
 > {
   subscribe: CacheStore<ResourceType>['subscribe']
@@ -43,7 +43,7 @@ export type ResourceConfig<ResourceType extends Resource> = {
 
 export function createResource<
   ResourceType extends Resource,
-  UserNetworkClient extends NetworkClient<any> = NetworkClient<void>,
+  UserNetworkClient extends NetworkClient<any> = NetworkClient<void[]>,
   ExtraRoutes extends RouteMap<any> = {}
 >(
   resourceName: string,

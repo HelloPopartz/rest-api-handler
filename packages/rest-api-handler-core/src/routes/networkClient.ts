@@ -5,8 +5,8 @@ export type NetworkClientRequestData = {
 } & Pick<RouteOptions<any, () => {}, any>, 'method' | 'resource'> &
   RouteData<any>
 
-export type NetworkClient<NetworkClientConfig> = (
-  clientConfig: NetworkClientConfig
+export type NetworkClient<NetworkClientConfigParams extends any[]> = (
+  ...clientConfig: NetworkClientConfigParams
 ) => (requestData: NetworkClientRequestData) => Promise<any>
 
 // This function is just for type-safety purposes
