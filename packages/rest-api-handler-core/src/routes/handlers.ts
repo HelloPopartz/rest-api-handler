@@ -249,7 +249,7 @@ function generateHandlersFromRoute<ResourceType extends Resource, UserNetworkCli
             return emitUpdateListAction(response, routeData, routeConfig, store, getIdFromResource)
         }
       } catch (e) {
-        const error = createRestApiHandlerError(storeName, e)
+        const error = createRestApiHandlerError(storeName, e.message)
         emitErrorAction(error, routeData, routeConfig, store)
       }
     }

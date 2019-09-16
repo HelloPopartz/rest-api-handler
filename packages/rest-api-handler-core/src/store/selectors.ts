@@ -20,10 +20,7 @@ export function createSelectors<ResourceType extends Resource>({
   function getResource(state: CacheStoreData<ResourceType>, id: ResourceType['id']) {
     const resource = state[id]
     if (resource === undefined || resource === null) {
-      throw createRestApiHandlerError(
-        getStoreName(),
-        new Error(`[rest-api-handler]: The element with id ${id} does not exit`)
-      )
+      throw createRestApiHandlerError(getStoreName(), `[rest-api-handler]: The element with id ${id} does not exit`)
     }
     return resource
   }
