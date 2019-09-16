@@ -251,6 +251,7 @@ function generateHandlersFromRoute<ResourceType extends Resource, UserNetworkCli
       } catch (e) {
         const error = createRestApiHandlerError(storeName, e.message)
         emitErrorAction(error, routeData, routeConfig, store)
+        throw error
       }
     }
   }
