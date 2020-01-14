@@ -5,14 +5,14 @@
   "dependencies": {
     "@rest-api-handler/fetch-http-client": "^2.1.4",
     "@rest-api-handler/react": "^2.1.4",
-    "@types/jest": "24.0.12",
-    "@types/node": "12.0.0",
-    "@types/react": "16.8.17",
-    "@types/react-dom": "16.8.4",
+    "@types/jest": "24.0.25",
+    "@types/node": "13.1.6",
+    "@types/react": "16.9.17",
+    "@types/react-dom": "16.9.4",
     "flexus": "^0.1.0-alpha.0",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1"
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-scripts": "3.3.0"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -32,7 +32,7 @@ export interface ConnectedRestApiResource<
 
 export function createConnectedResource<
   ResourceType extends Resource,
-  UserClientConfig extends NetworkClient<any> = NetworkClient<void>,
+  UserClientConfig extends NetworkClient<any> = NetworkClient<any>,
   ExtraRoutes extends RouteMap<any> = {}
 >(
   storeId: string,
