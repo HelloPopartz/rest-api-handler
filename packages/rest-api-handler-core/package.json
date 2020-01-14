@@ -1,6 +1,6 @@
 {
   "name": "@rest-api-handler/core",
-  "version": "2.1.4",
+  "version": "2.2.0",
   "source": "src/index.ts",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
