@@ -34,7 +34,6 @@
   "license": "MIT",
   "dependencies": {
     "@rest-api-handler/core": "^2.2.0",
-    "@types/redux": "^3.6.0",
-    "redux": "^4.0.1"
+    "redux": "^4.0.5"
   }
 }

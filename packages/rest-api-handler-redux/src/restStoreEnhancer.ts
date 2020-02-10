@@ -60,7 +60,7 @@ export const connectToRestResources = (
   }
   const enhancedPreloadedState = { ...preloadedState, [REST_API_STORE_ID]: {} }
 
-  const store = createStore<S & RestApiEntitiesState, A>(enhancedReducer, enhancedPreloadedState)
+  const store = createStore<S & RestApiEntitiesState, A>(enhancedReducer, enhancedPreloadedState as any)
 
   injectReduxToResources(store as any, restResources)
 
