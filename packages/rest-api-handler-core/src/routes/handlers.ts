@@ -158,17 +158,14 @@ export function emitUpdateListAction<ResourceType extends Resource>(
   )
 
   // Map array to object keyed by id
-  const mapForStore = result.reduce(
-    (map, data) => {
-      if (!data) {
-        return map
-      }
-      const id = getIdFromResource(data)
-      map[String(id)] = data
+  const mapForStore = result.reduce((map, data) => {
+    if (!data) {
       return map
-    },
-    {} as Record<string, ResourceType>
-  )
+    }
+    const id = getIdFromResource(data)
+    map[String(id)] = data
+    return map
+  }, {} as Record<string, ResourceType>)
 
   dispatch(
     updateList.success({
@@ -211,7 +208,7 @@ function generateHandlersFromRoute<ResourceType extends Resource, UserNetworkCli
   getIdFromResource: GetIdFromResource<ResourceType>,
   networkClient: UserNetworkClient
 ) {
-  const { handler = () => {}, resourceUrl, method, dataType = 'item', resource } = routeConfig
+  const { handler = () => ({}), resourceUrl, method, dataType = 'item', resource } = routeConfig
   const { getStoreName } = store
   const storeName = getStoreName()
 
@@ -219,7 +216,7 @@ function generateHandlersFromRoute<ResourceType extends Resource, UserNetworkCli
     const networkClientWithConfig = networkClient(...config)
     return async (...params: Parameters<NonNullable<typeof handler>>) => {
       // Parse request data
-      const requestData = handler(...params) || {}
+      const requestData = handler(...params)
       const routeData = {
         method,
         resource,

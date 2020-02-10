@@ -27,7 +27,7 @@ export function createStore<ResourceType extends Resource>(
 ): CacheStore<ResourceType> {
   // Store data
   let uId = 0
-  let subscriptions = {} as Record<string, SubscribeCallback<ResourceType>>
+  const subscriptions = {} as Record<string, SubscribeCallback<ResourceType>>
 
   function subscribe(callback: SubscribeCallback<ResourceType>) {
     uId++

@@ -90,7 +90,7 @@ export function generateRoutes<ResourceType extends Resource, ExtraRoutes extend
     },
   })
 
-  let extraRoutes = {}
+  const extraRoutes = {}
   Object.keys(routes).forEach(routeKey => {
     extraRoutes[routeKey] = {
       ...inheritableConfig,

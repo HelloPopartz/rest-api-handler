@@ -30,7 +30,7 @@ export function createOperations<ResourceType extends Resource>(
       if (Array.isArray(data)) {
         const mapForStore: Record<string, ResourceType> = {}
         data.forEach((data: ResourceType) => {
-          let parsedData = transformData(data)
+          const parsedData = transformData(data)
           const id = getIdFromResource(data)
           const validId = checkIfValidId(getStoreName(), id)
           // Emit subscription
