@@ -21,7 +21,10 @@ export interface RestApiResource<
   subscribe: CacheStore<ResourceType>['subscribe']
   unsubscribe: CacheStore<ResourceType>['unsubscribe']
   getState: CacheStore<ResourceType>['getState']
-  forceUpdate: (data: ResourceType | ResourceType[]) => void
+  forceUpdate: (
+    data: ResourceType | ResourceType[],
+    config?: { transformData: (originalData: any) => ResourceType }
+  ) => void
   getApiHandlers: GetApiHandlers<ResourceType, UserNetworkClient, Routes>
   getResource: GetResource<ResourceType>
   getIdFromResource: GetIdFromResource<ResourceType>
@@ -52,7 +55,12 @@ export function createResource<
   extraRoutes: ExtraRoutes = {} as ExtraRoutes,
   resourceConfig: ResourceConfig<ResourceType> = {}
 ) {
-  const { partialUpdate = true, customStore, transformData, initialData } = resourceConfig
+  const {
+    partialUpdate = true,
+    customStore,
+    transformData = (data: any) => data as ResourceType,
+    initialData,
+  } = resourceConfig
   const finalRoutes = generateRoutes<ResourceType, ExtraRoutes>(extraRoutes, {
     partialUpdate,
     transformData,
@@ -61,7 +69,7 @@ export function createResource<
   const store = customStore || createStore<ResourceType>(resourceName, initialData)
   const { getResource, getIdFromResource } = createSelectors<ResourceType>(store)
   const { getApiHandlers } = createHandlers(finalRoutes, store, getIdFromResource, networkClient)
-  const { forceUpdate } = createOperations(store, getIdFromResource)
+  const { forceUpdate } = createOperations(store, { getIdFromResource, transformData })
   return {
     getApiHandlers,
     subscribe: store.subscribe,

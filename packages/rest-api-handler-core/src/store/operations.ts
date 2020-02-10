@@ -3,19 +3,34 @@ import { GetIdFromResource } from './selectors'
 import { checkIfValidId } from '../routes/handlers'
 import { Resource } from './types'
 
+type TransformFunc<ResourceType extends Resource> = (originalData: any) => ResourceType
+
 export function createOperations<ResourceType extends Resource>(
   { dispatch, actions, getStoreName }: CacheStore<ResourceType>,
-  getIdFromResource: GetIdFromResource<ResourceType>
+  {
+    getIdFromResource,
+    transformData: inheritedTransformData,
+  }: {
+    getIdFromResource: GetIdFromResource<ResourceType>
+    transformData: TransformFunc<ResourceType>
+  }
 ) {
   return {
-    forceUpdate: (data: ResourceType | ResourceType[]) => {
+    forceUpdate: (
+      data: any,
+      {
+        transformData = inheritedTransformData,
+      }: {
+        transformData?: TransformFunc<ResourceType>
+      }
+    ) => {
       if (!data) {
         throw new Error('[rest-api-handler]: Manual update failed')
       }
       if (Array.isArray(data)) {
         const mapForStore: Record<string, ResourceType> = {}
         data.forEach((data: ResourceType) => {
-          let parsedData = data
+          let parsedData = transformData(data)
           const id = getIdFromResource(data)
           const validId = checkIfValidId(getStoreName(), id)
           // Emit subscription
@@ -33,10 +48,11 @@ export function createOperations<ResourceType extends Resource>(
         if (!id) {
           throw new Error('[rest-api-handler]: Manual update failed')
         }
+        const parsedData = transformData(data)
         dispatch(
           actions.update.success({
             id,
-            data,
+            data: parsedData,
           })
         )
       }
