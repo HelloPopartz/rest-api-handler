@@ -16,5 +16,8 @@ export const resource = createConnectedResource<Todo, FetchHttpClient>(
   {
     partialUpdate: false,
     initialData: { 1: { id: 1, userId: 200, title: 'wow', completed: false } },
+    transformData: ({ ...data }) => {
+      return { ...data }
+    },
   }
 )

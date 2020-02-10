@@ -22,7 +22,7 @@ export function createOperations<ResourceType extends Resource>(
         transformData = inheritedTransformData,
       }: {
         transformData?: TransformFunc<ResourceType>
-      }
+      } = {}
     ) => {
       if (!data) {
         throw new Error('[rest-api-handler]: Manual update failed')

@@ -19,6 +19,18 @@ const App: React.FC = () => {
       title: 'hello',
     })
   }, [resourceId, data])
+  const forceUpdate = useCallback(() => {
+    if (!data || !data[0]) {
+      console.log('fall through')
+      return
+    }
+    resource.forceUpdate({
+      id: resourceId,
+      userId: 1,
+      completed: false,
+      title: 'hello',
+    })
+  }, [resourceId, data])
   return (
     <div className="App">
       <header className="App-header">
@@ -34,6 +46,9 @@ const App: React.FC = () => {
           </button>
           <button style={{ margin: '0 8px' }} onClick={updateResource}>
             Modify resource
+          </button>
+          <button style={{ margin: '0 8px' }} onClick={forceUpdate}>
+            Force update resource
           </button>
         </div>
         <div className="container">
