@@ -1,12 +1,4 @@
-import {
-  StoreEnhancer,
-  Reducer,
-  AnyAction,
-  Action,
-  DeepPartial,
-  StoreEnhancerStoreCreator,
-  combineReducers,
-} from 'redux'
+import { StoreEnhancer, Reducer, AnyAction, Action, StoreEnhancerStoreCreator, combineReducers } from 'redux'
 import { Resource } from '@rest-api-handler/core'
 
 import { ConnectedRestApiResource } from './connectedRestResource'
@@ -40,12 +32,12 @@ function injectReduxToResources<ResourceType extends Resource>(
 
 export const connectToRestResources = (
   restResources: Record<string, any> = {}
-): StoreEnhancer<{}, RestApiEntitiesState> => (createStore: StoreEnhancerStoreCreator<{}, RestApiEntitiesState>) => <
+): StoreEnhancer<{}, RestApiEntitiesState> => (createStore: StoreEnhancerStoreCreator<any, RestApiEntitiesState>) => <
   S,
   A extends Action = AnyAction
 >(
   reducer: Reducer<S, A>,
-  preloadedState: DeepPartial<S> = {}
+  preloadedState: any = {}
 ) => {
   if (isEmpty(restResources)) {
     emitWarning('', WarningCodes.noResources)
@@ -60,7 +52,7 @@ export const connectToRestResources = (
   }
   const enhancedPreloadedState = { ...preloadedState, [REST_API_STORE_ID]: {} }
 
-  const store = createStore<S & RestApiEntitiesState, A>(enhancedReducer, enhancedPreloadedState as any)
+  const store = createStore<S & RestApiEntitiesState, A>(enhancedReducer as any, enhancedPreloadedState as any)
 
   injectReduxToResources(store as any, restResources)
 
