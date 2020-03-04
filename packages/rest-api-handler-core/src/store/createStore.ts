@@ -21,9 +21,14 @@ export type CacheStore<ResourceType extends Resource> = Readonly<{
   actions: RestApiActionHandlers
 }>
 
+export type CacheStoreConfig<ResourceType extends Resource> = {
+  initialData?: CacheStoreData<ResourceType>
+  partialUpdate?: boolean
+}
+
 export function createStore<ResourceType extends Resource>(
   storeName: string,
-  initialData?: CacheStoreData<ResourceType>
+  config: CacheStoreConfig<ResourceType>
 ): CacheStore<ResourceType> {
   // Store data
   let uId = 0
@@ -45,8 +50,8 @@ export function createStore<ResourceType extends Resource>(
   }
 
   const actions = createActions()
-  const reducer = createReducer<ResourceType>(actions, initialData)
-  let state = reducer({} as any, {} as any)
+  const reducer = createReducer<ResourceType>(actions, config)
+  let state = reducer(config.initialData, {} as any)
 
   function getState() {
     return state

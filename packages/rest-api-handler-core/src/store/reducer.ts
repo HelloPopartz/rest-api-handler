@@ -1,13 +1,13 @@
 import { RestApiActionHandlers } from './actions'
-import { CacheStoreData } from './createStore'
+import { CacheStoreData, CacheStoreConfig } from './createStore'
 import { ActionWithPayload, getType, ActionPayload } from '../utils/actionTypes'
 import { Resource } from './types'
 
 export const createReducer = <ResourceType extends Resource>(
   { update, updateList, clearStore, deleteResource }: RestApiActionHandlers,
-  initialState: CacheStoreData<ResourceType> = {} as CacheStoreData<ResourceType>
+  { initialData = {} as CacheStoreData<ResourceType>, partialUpdate }: CacheStoreConfig<ResourceType>
 ) => (
-  state: CacheStoreData<ResourceType> = initialState,
+  state: CacheStoreData<ResourceType> = initialData,
   action: ActionWithPayload<any, any>
 ): CacheStoreData<ResourceType> => {
   switch (action.type) {
@@ -15,14 +15,23 @@ export const createReducer = <ResourceType extends Resource>(
       const { id, data }: ActionPayload<typeof update.success> = action.payload
       return {
         ...state,
-        [id]: data,
+        [id]: partialUpdate ? { ...state[id], ...data } : data,
       }
     }
     case getType(updateList.success): {
       const { data }: ActionPayload<typeof updateList.success> = action.payload
-      return {
-        ...state,
-        ...(data as Record<string, ResourceType>),
+      if (partialUpdate) {
+        const newState = {} as Record<ResourceType['id'], ResourceType>
+        Object.keys(data).forEach(id => {
+          const savedData = state[id] || {}
+          newState[id] = { ...savedData, ...data[id] }
+        })
+        return newState
+      } else {
+        return {
+          ...state,
+          ...(data as Record<string, ResourceType>),
+        }
       }
     }
     case getType(deleteResource): {

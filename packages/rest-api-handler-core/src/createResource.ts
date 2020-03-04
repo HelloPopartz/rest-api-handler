@@ -66,7 +66,7 @@ export function createResource<
     transformData,
     resourceUrl,
   })
-  const store = customStore || createStore<ResourceType>(resourceName, initialData)
+  const store = customStore || createStore<ResourceType>(resourceName, { initialData, partialUpdate })
   const { getResource, getIdFromResource } = createSelectors<ResourceType>(store)
   const { getApiHandlers } = createHandlers(finalRoutes, store, getIdFromResource, networkClient)
   const { forceUpdate } = createOperations(store, { getIdFromResource, transformData })

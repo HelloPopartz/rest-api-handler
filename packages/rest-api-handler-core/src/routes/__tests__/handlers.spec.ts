@@ -1,37 +1,17 @@
-import {
-  checkIfValidId,
-  emitRequestAction,
-  emitDeleteAction,
-  transformResource,
-  emitUpdateItemAction,
-} from '../handlers'
+import { checkIfValidId, emitDeleteAction, transformResource, emitUpdateItemAction } from '../handlers'
 
 import * as Messages from '../../messages'
+import { createStore } from '../../store'
 
 const storeName = 'test'
 
 describe('#handlers', () => {
-  function createStoreMock(state = {}) {
-    return {
-      getState: jest.fn(() => state),
-      getStoreName: jest.fn(() => 'test'),
-      dispatch: jest.fn(),
-      actions: {
-        deleteResource: jest.fn(),
-        update: {
-          request: jest.fn(),
-          success: jest.fn(),
-          cancel: jest.fn(),
-        },
-        updateList: {
-          request: jest.fn(),
-        },
-      },
-    }
-  }
-
   function getIdFromResourceMock(data: any) {
     return data.id
+  }
+
+  function createTestStore(initialData: any = {}, { partialUpdate }: { partialUpdate?: boolean } = {}) {
+    return createStore('testStore', { initialData, partialUpdate })
   }
 
   const mockEmitWarning = jest.fn()
@@ -46,81 +26,57 @@ describe('#handlers', () => {
   })
 
   describe('#checkIfValidId', () => {
-    it('If a id is not valid, it will emit a warning', () => {
+    it('emits a warning if the provided id is not valid', () => {
       checkIfValidId(storeName, null as any)
       checkIfValidId(storeName, undefined as any)
       checkIfValidId(storeName, [] as any)
       checkIfValidId(storeName, {} as any)
       expect(mockEmitWarning).toHaveBeenCalledTimes(4)
     })
-    it('If a id is valid, emit nothing', () => {
+    it('emits nothing If the provided id is valid', () => {
       checkIfValidId(storeName, 1)
       checkIfValidId(storeName, '1')
       expect(mockEmitWarning).not.toHaveBeenCalled()
     })
   })
-  describe('#emitRequestAction', () => {
-    it('When no resourceId is available, no action is emitted', () => {
-      const routeData = {} as any
-      const routeConfig = { dataType: 'item' } as any
-      const store = createStoreMock()
-      emitRequestAction(routeData, routeConfig, store as any)
-      expect(store.dispatch).not.toHaveBeenCalled()
-    })
-    it('When a resourceId is available and route is of type "item" it should emit a "request update" action', () => {
-      const id = 1
-      const routeData = { resourceId: id } as any
-      const routeConfig = { dataType: 'item' } as any
-      const store = createStoreMock()
-      emitRequestAction(routeData, routeConfig, store as any)
-      expect(store.dispatch).toHaveBeenCalled()
-      expect(store.actions.update.request).toHaveBeenCalledWith({ id, routeData })
-    })
-    it('When a the route is of type "list" it should emit a "request update" action', () => {
-      const routeData = {} as any
-      const routeConfig = { dataType: 'list' } as any
-      const store = createStoreMock()
-      emitRequestAction(routeData, routeConfig, store as any)
-      expect(store.dispatch).toHaveBeenCalled()
-      expect(store.actions.updateList.request).toHaveBeenCalledWith({ routeData })
-    })
-  })
   describe('#emitDeleteAction', () => {
-    it('When no resourceId is available, no action is emitted', () => {
-      const routeData = {} as any
-      const store = createStoreMock()
-      emitDeleteAction(routeData, store as any)
-      expect(store.dispatch).not.toHaveBeenCalled()
-    })
-    it('When a resourceId is available it should emit a "delete" action', () => {
+    it('leaves the store unchanged if no valid id is provided to the delete function', () => {
       const id = 1
-      const routeData = { resourceId: id } as any
-      const store = createStoreMock()
-      emitDeleteAction(routeData, store as any)
-      expect(store.dispatch).toHaveBeenCalled()
-      expect(store.actions.deleteResource).toHaveBeenCalledWith({ id, routeData })
+      const data = {} as any
+      const initialData = { [id]: { id, a: 3 } }
+      const store = createTestStore(initialData)
+      emitDeleteAction(data, store as any)
+      expect(store.getState()).toStrictEqual(initialData)
+    })
+    it('deletes the item when a id is provided to the delete action', () => {
+      const id = 1
+      const data = { resourceId: id } as any
+      const initialData = { [id]: { id, a: 3 } }
+      const store = createTestStore(initialData)
+      emitDeleteAction(data, store as any)
+      expect(store.getState()[id]).toBeUndefined()
     })
   })
   describe('#transformResource', () => {
-    it('If "parseResponse" is available, it parses the data', () => {
+    it('parses the data if "parseResponse" is available', () => {
       const expectedResult = { id: 1 }
       const response = {}
       const routeData = {} as any
       const routeConfig = {
         parseResponse: jest.fn(() => expectedResult),
       } as any
-      const store = createStoreMock() as any
+      const store = createTestStore() as any
       const result = transformResource(response, routeData, routeConfig, store, getIdFromResourceMock)
       expect(result).toBe(expectedResult)
     })
-    it('If "parseResponse" is available but emits and array, it throw a warning', () => {
+    it('throws a warning if "parseResponse" is available but emits and array', () => {
       const expectedResult = [{ id: 1 }]
       const response = {}
       const routeData = {} as any
       const routeConfig = {
         parseResponse: jest.fn(() => expectedResult),
       } as any
-      const store = createStoreMock() as any
+      const store = createTestStore() as any
       const result = transformResource(response, routeData, routeConfig, store, getIdFromResourceMock)
       expect(result).toBeUndefined()
       expect(mockEmitWarning).toHaveBeenCalled()
@@ -132,73 +88,76 @@ describe('#handlers', () => {
       const routeConfig = {
         transformData: jest.fn(() => expectedResult),
       } as any
-      const store = createStoreMock() as any
+      const store = createTestStore() as any
       const result = transformResource(response, routeData, routeConfig, store, getIdFromResourceMock)
       expect(result).toBe(expectedResult)
     })
-    it('If "transformData" is available but emits and array, it throw a warning', () => {
+    it('throws a warning if "transformData" is available but emits and array', () => {
       const expectedResult = [{ id: 1 }]
       const response = {}
       const routeData = {} as any
       const routeConfig = {
         transformData: jest.fn(() => expectedResult),
       } as any
-      const store = createStoreMock() as any
+      const store = createTestStore() as any
       const result = transformResource(response, routeData, routeConfig, store, getIdFromResourceMock)
       expect(result).toBeUndefined()
       expect(mockEmitWarning).toHaveBeenCalled()
     })
-    it('If the resulting item has a invalid id, it throws a warning', () => {
+    it('throws a warning if the resulting item has a invalid id', () => {
       const response = { id: [] }
       const routeData = {} as any
       const routeConfig = {} as any
-      const store = createStoreMock() as any
+      const store = createTestStore() as any
       const result = transformResource(response, routeData, routeConfig, store, getIdFromResourceMock)
       expect(result).toBe(undefined)
       expect(mockEmitWarning).toHaveBeenCalled()
     })
-    it('If partial updates are off, returns the result without checking the store', () => {
-      const response = { id: 1, a: 3 }
-      const storedResource = { id: 1, b: 4 }
-      const routeData = {} as any
-      const routeConfig = {
-        partialUpdate: false,
-      } as any
-      const store = createStoreMock({ [storedResource.id]: storedResource }) as any
-      const result = transformResource(response, routeData, routeConfig, store, getIdFromResourceMock)
-      expect(result).toBe(response)
-    })
-    it('If partial updates are on, returns the result without checking the store', () => {
-      const response = { id: 1, a: 3 }
-      const storedResource = { id: 1, b: 4 }
-      const routeData = {} as any
-      const routeConfig = {
-        partialUpdate: true,
-      } as any
-      const store = createStoreMock({ [storedResource.id]: storedResource }) as any
-      const result = transformResource(response, routeData, routeConfig, store, getIdFromResourceMock)
-      expect(store.getState).toHaveBeenCalled()
-      expect(result).toEqual({ ...response, ...storedResource })
-    })
   })
   describe('#emitUpdateItemAction', () => {
-    it('If data transformation is successful, it emits a "success update" action', () => {
-      const response = { id: 1, a: 3 }
+    it("saves a resource if has id and it's valid", () => {
+      const id = 1
+      const response = { id, a: 3 }
       const routeData = {} as any
       const routeConfig = {} as any
-      const store = createStoreMock()
-      const result = emitUpdateItemAction(response, routeData, routeConfig, store as any, getIdFromResourceMock)
-      expect(result).toBe(response)
-      expect(store.actions.update.success).toHaveBeenCalled()
+      const store = createTestStore()
+      emitUpdateItemAction(response, routeData, routeConfig, store as any, getIdFromResourceMock)
+      expect(store.getState()[id]).toBe(response)
     })
-    it('If data transformation fails, it emits a "cancel update" action', () => {
+    it("leaves the store unchanged if resource has no id or it's invalid", () => {
       // Invalid id, should fail
+      const id = 1
       const response = { a: 3 }
       const routeData = {} as any
       const routeConfig = {} as any
-      const store = createStoreMock()
+      const initialData = { [id]: { id, a: 3 } }
+      const store = createTestStore(initialData)
       emitUpdateItemAction(response, routeData, routeConfig, store as any, getIdFromResourceMock)
-      expect(store.actions.update.cancel).toHaveBeenCalled()
+      expect(store.getState()).toBe(initialData)
+    })
+    it('If partial updates are off, returns the result as is', () => {
+      const resourceId = 1
+      const response = { id: resourceId, a: 3 }
+      const storedResource = { id: resourceId, b: 4 }
+      const routeData = {} as any
+      const storeConfig = {
+        partialUpdate: false,
+      }
+      const store = createTestStore({ [resourceId]: storedResource }, storeConfig)
+      emitUpdateItemAction(response, routeData, {} as any, store, getIdFromResourceMock)
+      expect(store.getState()[resourceId]).toStrictEqual(response)
+    })
+    it('If partial updates are on, returns the merged result', () => {
+      const resourceId = 1
+      const response = { id: resourceId, a: 3 }
+      const storedResource = { id: resourceId, b: 4 }
+      const routeData = {} as any
+      const storeConfig = {
+        partialUpdate: true,
+      }
+      const store = createTestStore({ [resourceId]: storedResource }, storeConfig)
+      emitUpdateItemAction(response, routeData, {} as any, store, getIdFromResourceMock)
+      expect(store.getState()[resourceId]).toStrictEqual({ ...storedResource, ...response })
     })
   })
 })

@@ -63,8 +63,8 @@ export function emitDeleteAction<ResourceType extends Resource>(
 export function transformResource<ResourceType extends Resource>(
   response: any,
   routeData: RouteDataWithName<ResourceType>,
-  { parseResponse, transformData, partialUpdate }: RouteOptions<ResourceType, any, any>,
-  { getStoreName, getState }: CacheStore<ResourceType>,
+  { parseResponse, transformData }: RouteOptions<ResourceType, any, any>,
+  { getStoreName }: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
 ) {
   const { resourceId } = routeData
@@ -91,8 +91,7 @@ export function transformResource<ResourceType extends Resource>(
   const validId = checkIfValidId(storeName, id)
 
   if (validId) {
-    const storedData = getState()[id]
-    return partialUpdate ? { ...storedData, ...resourceToUpdate } : resourceToUpdate
+    return resourceToUpdate
   } else {
     return undefined
   }
