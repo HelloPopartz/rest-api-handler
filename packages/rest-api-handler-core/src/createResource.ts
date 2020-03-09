@@ -22,7 +22,7 @@ export interface RestApiResource<
   unsubscribe: CacheStore<ResourceType>['unsubscribe']
   getState: CacheStore<ResourceType>['getState']
   forceUpdate: (
-    data: ResourceType | ResourceType[],
+    data: Partial<ResourceType> | Partial<ResourceType>[],
     config?: { transformData: (originalData: any) => ResourceType }
   ) => void
   getApiHandlers: GetApiHandlers<ResourceType, UserNetworkClient, Routes>
