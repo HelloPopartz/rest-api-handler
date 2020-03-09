@@ -14,7 +14,6 @@ describe('#createResource', function() {
   it('Creates correctly a store with the default REST handlers', function() {
     const resource = createResource<TestResource, HttpClient>('test', 'testUrl', mockedHttpClient)
     const { create, remove, get, list, patch, put } = resource.getApiHandlers()
-    get('hola')
     expect(create).toBeTruthy()
     expect(remove).toBeTruthy()
     expect(get).toBeTruthy()

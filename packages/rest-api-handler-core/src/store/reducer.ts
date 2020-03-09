@@ -26,7 +26,7 @@ export const createReducer = <ResourceType extends Resource>(
           const savedData = state[id] || {}
           newState[id] = { ...savedData, ...data[id] }
         })
-        return newState
+        return { ...state, ...newState }
       } else {
         return {
           ...state,
