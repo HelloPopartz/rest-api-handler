@@ -1,5 +1,5 @@
 import { StoreEnhancer, Reducer, AnyAction, Action, StoreEnhancerStoreCreator, combineReducers } from 'redux'
-import { Resource } from '@rest-api-handler/core'
+import { Resource, CacheStoreConfig } from '@rest-api-handler/core'
 
 import { ConnectedRestApiResource } from './connectedRestResource'
 import { emitWarning, WarningCodes } from './warning.service'

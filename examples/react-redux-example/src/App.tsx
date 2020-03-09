@@ -26,8 +26,6 @@ const App: React.FC = () => {
     }
     resource.forceUpdate({
       id: resourceId,
-      userId: 1,
-      completed: false,
       title: 'hello',
     })
   }, [resourceId, data])
