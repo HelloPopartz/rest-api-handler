@@ -41,7 +41,6 @@ export function createConnectedResource<
   extraRoutes: ExtraRoutes = {} as ExtraRoutes,
   { initialData, partialUpdate = true, ...resourceConfig }: Omit<ResourceConfig<ResourceType>, 'customStore'> = {}
 ) {
-  console.log(partialUpdate)
   const internalStore = createConnectedStore<ResourceType>(storeId, { initialData, partialUpdate })
   const restResource = createResource(storeId, resourceUrl, networkClient, extraRoutes, {
     ...resourceConfig,
