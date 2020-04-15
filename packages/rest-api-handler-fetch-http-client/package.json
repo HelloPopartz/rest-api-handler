@@ -36,6 +36,6 @@
     "@rest-api-handler/core": "^2.4.3",
     "es6-promise": "^4.2.8",
     "isomorphic-fetch": "^2.2.1",
-    "query-string": "^6.11.1"
+    "query-string": "^6.12.1"
   }
 }
