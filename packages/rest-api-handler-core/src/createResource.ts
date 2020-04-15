@@ -25,6 +25,7 @@ export interface RestApiResource<
   getApiHandlers: GetApiHandlers<ResourceType, UserNetworkClient, Routes>
   getResource: GetResource<ResourceType>
   getIdFromResource: GetIdFromResource<ResourceType>
+  clearStore: () => void
   config: {
     routeConfig: Routes
     store: CacheStore<ResourceType>
@@ -72,6 +73,7 @@ export function createResource<
     subscribe: store.subscribe,
     unsubscribe: store.unsubscribe,
     getState: store.getState,
+    clearStore: store.clearStore,
     forceUpdate,
     getResource,
     getIdFromResource,

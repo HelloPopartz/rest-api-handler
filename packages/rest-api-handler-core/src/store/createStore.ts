@@ -19,6 +19,7 @@ export type CacheStore<ResourceType extends Resource> = Readonly<{
   subscribe: (callback: SubscribeCallback<ResourceType>) => string
   unsubscribe: (subId: string) => boolean
   actions: RestApiActionHandlers
+  clearStore: () => void
 }>
 
 export type CacheStoreConfig<ResourceType extends Resource> = {
@@ -66,6 +67,10 @@ export function createStore<ResourceType extends Resource>(
     return storeName
   }
 
+  function clearStore() {
+    dispatch(actions.clearStore() as any)
+  }
+
   return {
     getState,
     getStoreName,
@@ -73,5 +78,6 @@ export function createStore<ResourceType extends Resource>(
     subscribe,
     unsubscribe,
     actions,
+    clearStore,
   }
 }

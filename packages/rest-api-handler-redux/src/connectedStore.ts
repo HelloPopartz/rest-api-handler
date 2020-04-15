@@ -64,6 +64,10 @@ export function createConnectedStore<ResourceType extends Resource>(
     return storeName
   }
 
+  function clearStore() {
+    dispatch(actions.clearStore() as any)
+  }
+
   return {
     getState,
     dispatch,
@@ -73,5 +77,6 @@ export function createConnectedStore<ResourceType extends Resource>(
     reducer,
     getStoreName,
     injectReduxStore,
+    clearStore,
   }
 }

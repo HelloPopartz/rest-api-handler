@@ -9,9 +9,9 @@ export type RestApiActionHandlers = {
 
 function generateActionName(prefix: string, actionName: string) {
   if (prefix) {
-    return `${prefix.toUpperCase()}_${actionName}`
+    return `REST_API_HANDLER/${prefix.toUpperCase()}_${actionName}`
   } else {
-    return actionName
+    return `REST_API_HANDLER/${actionName}`
   }
 }
 
