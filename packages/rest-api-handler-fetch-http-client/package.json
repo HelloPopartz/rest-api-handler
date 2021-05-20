@@ -37,5 +37,6 @@
     "es6-promise": "^4.2.8",
     "isomorphic-fetch": "^3.0.0",
     "query-string": "^7.0.0"
-  }
+  },
+  "gitHead": "2c060818bd95aafb26ee927337f0cd95ddc542c9"
 }

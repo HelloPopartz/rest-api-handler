@@ -31,5 +31,6 @@
   },
   "homepage": "https://github.com/HelloPopartz/rest-api-handler",
   "author": "Ricardo Domínguez Álvarez <r.dominguez.alvarez.dev@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "gitHead": "2c060818bd95aafb26ee927337f0cd95ddc542c9"
 }

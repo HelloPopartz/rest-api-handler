@@ -35,5 +35,6 @@
   "dependencies": {
     "@rest-api-handler/core": "^2.6.0",
     "redux": "^4.0.5"
-  }
+  },
+  "gitHead": "2c060818bd95aafb26ee927337f0cd95ddc542c9"
 }
