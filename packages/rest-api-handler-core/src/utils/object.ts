@@ -1,12 +1,12 @@
 export function conditionalInsert<Condition extends boolean, Data extends Record<string, any>>(
   condition: Condition,
   objectToInsert: Data
-): Condition extends true ? Data : {}
+): Condition extends true ? Data : Record<string, any>
 
 export function conditionalInsert<Condition extends boolean, Data extends Record<string, any>>(
   condition: Condition,
   objectToInsert: Data
-): Data | {} {
+): Data | Record<string, any> {
   return condition ? objectToInsert : {}
 }
 

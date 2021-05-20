@@ -6,4 +6,4 @@ export type RestApiEntitiesState = {
   [REST_API_STORE_ID]: Record<string, Record<string | number, any>>
 }
 
-export type EnhancedStore<S, A> = Store<S & RestApiEntitiesState, Action<any>>
+export type EnhancedStore<S> = Store<S & RestApiEntitiesState, Action<any>>

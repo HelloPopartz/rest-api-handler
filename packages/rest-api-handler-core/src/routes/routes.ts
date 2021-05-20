@@ -5,7 +5,7 @@ import { Resource } from '../store'
 export function createRoute<
   ResourceType extends Resource,
   DataType extends RouteDataType,
-  TransformRequestFunc extends (...args: any) => RouteData<ResourceType> = () => {}
+  TransformRequestFunc extends (...args: any) => RouteData = () => Record<string, any>
 >(
   route: RouteOptions<ResourceType, TransformRequestFunc, DataType>
 ): RouteOptions<ResourceType, TransformRequestFunc, DataType> {
@@ -18,7 +18,7 @@ export function generateRoutes<ResourceType extends Resource, ExtraRoutes extend
 ) {
   function createDefaultRoute<
     DataType extends RouteDataType,
-    TransformRequestFunc extends (...args: any) => RouteData<ResourceType> = () => {}
+    TransformRequestFunc extends (...args: any) => RouteData = () => Record<any, string>
   >(
     route: Omit<RouteOptions<ResourceType, TransformRequestFunc, DataType>, 'resourceUrl'>
   ): RouteOptions<ResourceType, TransformRequestFunc, DataType> {
@@ -91,7 +91,7 @@ export function generateRoutes<ResourceType extends Resource, ExtraRoutes extend
   })
 
   const extraRoutes = {}
-  Object.keys(routes).forEach(routeKey => {
+  Object.keys(routes).forEach((routeKey) => {
     extraRoutes[routeKey] = {
       ...inheritableConfig,
       ...routes[routeKey],

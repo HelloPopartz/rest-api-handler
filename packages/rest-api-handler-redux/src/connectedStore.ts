@@ -17,7 +17,7 @@ export function createConnectedStore<ResourceType extends Resource>(
 ) {
   // Store data
   let uId = 0
-  let reduxStore: EnhancedStore<any, any>
+  let reduxStore: EnhancedStore<any>
   const subscriptions = {} as Record<string, SubscribeCallback<ResourceType>>
 
   function subscribe(callback: SubscribeCallback<ResourceType>) {
@@ -56,7 +56,7 @@ export function createConnectedStore<ResourceType extends Resource>(
     }
   }
 
-  const injectReduxStore = (store: EnhancedStore<any, any>) => {
+  const injectReduxStore = (store: EnhancedStore<any>) => {
     reduxStore = store
   }
 

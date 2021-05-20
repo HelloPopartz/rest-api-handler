@@ -27,13 +27,13 @@ export interface ConnectedRestApiResource<
   storeId: string
   actions: RestApiActionHandlers
   reducer: Reducer<Record<string | number, ResourceType>>
-  injectReduxStore: (store: EnhancedStore<any, any>) => void
+  injectReduxStore: (store: EnhancedStore<any>) => void
 }
 
 export function createConnectedResource<
   ResourceType extends Resource,
   UserClientConfig extends NetworkClient<any> = NetworkClient<any>,
-  ExtraRoutes extends RouteMap<any> = {}
+  ExtraRoutes extends RouteMap<any> = Record<string, any>
 >(
   storeId: string,
   resourceUrl: string,

@@ -32,7 +32,7 @@ export function checkIfValidId(storeName: string, id: string | number) {
 }
 
 export function emitRequestAction<ResourceType extends Resource>(
-  routeData: RouteDataWithName<ResourceType>,
+  routeData: RouteDataWithName,
   { dataType }: RouteOptions<ResourceType, any, any>,
   { dispatch, actions: { update, updateList } }: CacheStore<ResourceType>
 ) {
@@ -45,7 +45,7 @@ export function emitRequestAction<ResourceType extends Resource>(
 }
 
 export function emitDeleteAction<ResourceType extends Resource>(
-  routeData: RouteDataWithName<ResourceType>,
+  routeData: RouteDataWithName,
   { dispatch, actions: { deleteResource } }: CacheStore<ResourceType>
 ) {
   const { resourceId } = routeData
@@ -62,7 +62,7 @@ export function emitDeleteAction<ResourceType extends Resource>(
 
 export function transformResource<ResourceType extends Resource>(
   response: any,
-  routeData: RouteDataWithName<ResourceType>,
+  routeData: RouteDataWithName,
   { parseResponse, transformData }: RouteOptions<ResourceType, any, any>,
   { getStoreName }: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
@@ -99,7 +99,7 @@ export function transformResource<ResourceType extends Resource>(
 
 export function emitUpdateItemAction<ResourceType extends Resource>(
   response: any,
-  routeData: RouteDataWithName<ResourceType>,
+  routeData: RouteDataWithName,
   routeConfig: RouteOptions<ResourceType, any, any>,
   store: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
@@ -126,7 +126,7 @@ export function emitUpdateItemAction<ResourceType extends Resource>(
 
 export function emitUpdateListAction<ResourceType extends Resource>(
   response: any,
-  routeData: RouteDataWithName<ResourceType>,
+  routeData: RouteDataWithName,
   { parseResponse, ...routeConfig }: RouteOptions<ResourceType, any, any>,
   store: CacheStore<ResourceType>,
   getIdFromResource: GetIdFromResource<ResourceType>
@@ -177,7 +177,7 @@ export function emitUpdateListAction<ResourceType extends Resource>(
 
 export function emitErrorAction<ResourceType extends Resource>(
   e: Error,
-  routeData: RouteDataWithName<ResourceType>,
+  routeData: RouteDataWithName,
   { dataType }: RouteOptions<ResourceType, any, any>,
   { dispatch, actions: { updateList, update } }: CacheStore<ResourceType>
 ) {

@@ -4,9 +4,9 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
     'prettier',
-    'prettier/@typescript-eslint',
+    'plugin:jest-formatting/strict',
   ],
-  plugins: ['react', 'react-hooks', '@typescript-eslint', 'eslint-plugin-import'],
+  plugins: ['react', 'react-hooks', '@typescript-eslint', 'eslint-plugin-import', 'unused-imports'],
   env: {
     browser: true,
     jasmine: true,
@@ -16,6 +16,7 @@ module.exports = {
     'no-undef': 0,
     semi: ['warn', 'never'],
     'react/prop-types': 0,
+    '@typescript-eslint/explicit-module-boundary-types': 0,
     '@typescript-eslint/no-var-requires': 1,
     '@typescript-eslint/no-explicit-any': 0,
     '@typescript-eslint/member-ordering': [
@@ -44,7 +45,9 @@ module.exports = {
     '@typescript-eslint/no-empty-interface': 0,
     '@typescript-eslint/no-namespace': 0,
     '@typescript-eslint/no-use-before-define': 0,
-    '@typescript-eslint/no-unused-vars': [
+    '@typescript-eslint/no-unused-vars': 'off',
+    'unused-imports/no-unused-imports-ts': 1,
+    'unused-imports/no-unused-vars-ts': [
       1,
       {
         ignoreRestSiblings: true,
@@ -60,7 +63,10 @@ module.exports = {
     'import/order': [
       1,
       {
-        groups: [['builtin', 'external', 'internal'], ['parent', 'sibling', 'index']],
+        groups: [
+          ['builtin', 'external', 'internal'],
+          ['parent', 'sibling', 'index'],
+        ],
         'newlines-between': 'always-and-inside-groups',
       },
     ],
@@ -68,14 +74,13 @@ module.exports = {
     'no-console': [1, { allow: ['debug', 'info', 'trace'] }],
     '@typescript-eslint/no-inferrable-types': [1, { ignoreParameters: true }],
     'no-fallthrough': 1,
-    '@typescript-eslint/class-name-casing': 1,
     'max-classes-per-file': 2,
     curly: 1,
     'eol-last': 1,
     'valid-jsdoc': 1,
     'no-caller': 1,
     'no-new-wrappers': 1,
-    'no-redeclare': 2,
+    'no-redeclare': 'off',
     'no-empty': 1,
     'no-eval': 1,
     '@typescript-eslint/prefer-namespace-keyword': 1,

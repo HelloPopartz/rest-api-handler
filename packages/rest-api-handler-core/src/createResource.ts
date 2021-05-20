@@ -45,7 +45,7 @@ export type ResourceConfig<ResourceType extends Resource> = {
 export function createResource<
   ResourceType extends Resource,
   UserNetworkClient extends NetworkClient<any> = NetworkClient<void[]>,
-  ExtraRoutes extends RouteMap<any> = {}
+  ExtraRoutes extends RouteMap<any> = Record<string, any>
 >(
   resourceName: string,
   resourceUrl: string,

@@ -1,5 +1,5 @@
 import { StoreEnhancer, Reducer, AnyAction, Action, StoreEnhancerStoreCreator, combineReducers } from 'redux'
-import { Resource, CacheStoreConfig } from '@rest-api-handler/core'
+import { Resource } from '@rest-api-handler/core'
 
 import { ConnectedRestApiResource } from './connectedRestResource'
 import { emitWarning, WarningCodes } from './warning.service'
@@ -10,7 +10,7 @@ function generateReducers<ResourceType extends Resource>(
   restResources: Record<string, ConnectedRestApiResource<ResourceType, any, any>>
 ) {
   const restResourcesReducers = {}
-  Object.keys(restResources).map(resourceKey => {
+  Object.keys(restResources).map((resourceKey) => {
     const { storeId, reducer } = restResources[resourceKey]
     if (resourceKey !== storeId) {
       emitWarning(storeId, WarningCodes.keyMismatch, resourceKey, storeId)
@@ -21,10 +21,10 @@ function generateReducers<ResourceType extends Resource>(
 }
 
 function injectReduxToResources<ResourceType extends Resource>(
-  store: EnhancedStore<any, any>,
+  store: EnhancedStore<any>,
   restResources: Record<string, ConnectedRestApiResource<ResourceType, any, any>>
 ) {
-  Object.keys(restResources).map(resourceKey => {
+  Object.keys(restResources).map((resourceKey) => {
     const { injectReduxStore } = restResources[resourceKey]
     injectReduxStore(store)
   })
@@ -32,13 +32,9 @@ function injectReduxToResources<ResourceType extends Resource>(
 
 export const connectToRestResources = (
   restResources: Record<string, any> = {}
-): StoreEnhancer<{}, RestApiEntitiesState> => (createStore: StoreEnhancerStoreCreator<any, RestApiEntitiesState>) => <
-  S,
-  A extends Action = AnyAction
->(
-  reducer: Reducer<S, A>,
-  preloadedState: any = {}
-) => {
+): StoreEnhancer<Record<string, any>, RestApiEntitiesState> => (
+  createStore: StoreEnhancerStoreCreator<any, RestApiEntitiesState>
+) => <S, A extends Action = AnyAction>(reducer: Reducer<S, A>, preloadedState: any = {}) => {
   if (isEmpty(restResources)) {
     emitWarning('', WarningCodes.noResources)
   }

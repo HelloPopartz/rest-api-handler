@@ -18,7 +18,7 @@ export type RouteDataType = 'item' | 'list' | 'none' | 'delete'
 
 export interface RouteOptions<
   ResourceType extends Resource,
-  TransformRequestFunc extends (...args: any) => RouteData<ResourceType>,
+  TransformRequestFunc extends (...args: any) => RouteData,
   DataType extends RouteDataType = 'item'
 > extends RouteInheritableOptions<ResourceType> {
   handler?: TransformRequestFunc
@@ -26,19 +26,19 @@ export interface RouteOptions<
   dataType?: DataType
   parseResponse?: (
     response: any,
-    requestData: RouteData<ResourceType>
+    requestData: RouteData
   ) => DataType extends 'none' ? any : DataType extends 'list' ? ResourceType[] : ResourceType
   method: RouteMethod
 }
 
-export type RouteData<ResourceType> = {
+export type RouteData = {
   resourceId?: any
   body?: any
   routeParams?: any[]
   queryParams?: Record<string, any>
 }
 
-export type RouteDataWithName<ResourceType extends Resource> = RouteData<ResourceType> & { name: string }
+export type RouteDataWithName = RouteData & { name: string }
 
 export type RouteMap<ResourceType extends Resource> = {
   [K: string]: RouteOptions<ResourceType, any, any>

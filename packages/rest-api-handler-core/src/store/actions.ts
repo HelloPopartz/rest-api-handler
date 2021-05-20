@@ -17,44 +17,44 @@ function generateActionName(prefix: string, actionName: string) {
 
 export function createActions(resourceName: string = '') {
   const update = {
-    request: (data: { routeData?: RouteDataWithName<any>; id: string | number }) => ({
+    request: (data: { routeData?: RouteDataWithName; id: string | number }) => ({
       type: generateActionName(resourceName, 'UPDATE_REQUEST'),
       payload: data,
     }),
-    success: (data: { routeData?: RouteDataWithName<any>; id: string | number; data: any }) => ({
+    success: (data: { routeData?: RouteDataWithName; id: string | number; data: any }) => ({
       type: generateActionName(resourceName, 'UPDATE_SUCCESS'),
       payload: data,
     }),
-    failure: (data: { routeData?: RouteDataWithName<any>; error: Error; id?: string | number }) => ({
+    failure: (data: { routeData?: RouteDataWithName; error: Error; id?: string | number }) => ({
       type: generateActionName(resourceName, 'UPDATE_FAILURE'),
       payload: data,
     }),
-    cancel: (data: { routeData?: RouteDataWithName<any> }) => ({
+    cancel: (data: { routeData?: RouteDataWithName }) => ({
       type: generateActionName(resourceName, 'UPDATE_CANCEL'),
       payload: data,
     }),
   }
 
   const updateList = {
-    request: (data: { routeData?: RouteDataWithName<any> }) => ({
+    request: (data: { routeData?: RouteDataWithName }) => ({
       type: generateActionName(resourceName, 'UPDATE_LIST_REQUEST'),
       payload: data,
     }),
-    success: (data: { routeData?: RouteDataWithName<any>; data: Record<string, any> }) => ({
+    success: (data: { routeData?: RouteDataWithName; data: Record<string, any> }) => ({
       type: generateActionName(resourceName, 'UPDATE_LIST_SUCCESS'),
       payload: data,
     }),
-    failure: (data: { routeData?: RouteDataWithName<any>; error: Error }) => ({
+    failure: (data: { routeData?: RouteDataWithName; error: Error }) => ({
       type: generateActionName(resourceName, 'UPDATE_LIST_FAILURE'),
       payload: data,
     }),
-    cancel: (data: { routeData?: RouteDataWithName<any> }) => ({
+    cancel: (data: { routeData?: RouteDataWithName }) => ({
       type: generateActionName(resourceName, 'UPDATE_LIST_CANCEL'),
       payload: data,
     }),
   }
 
-  const deleteResource = (data: { routeData?: RouteDataWithName<any>; id: string | number }) => ({
+  const deleteResource = (data: { routeData?: RouteDataWithName; id: string | number }) => ({
     type: generateActionName(resourceName, 'DELETE'),
     payload: data,
   })

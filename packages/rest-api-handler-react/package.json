@@ -36,10 +36,10 @@
     "@rest-api-handler/core": "^2.5.0"
   },
   "devDependencies": {
-    "@types/react": "^16.9.34",
-    "@types/react-dom": "^16.9.6",
-    "react": "^16.13.0",
-    "react-dom": "^16.13.0"
+    "@types/react": "^17.0.6",
+    "@types/react-dom": "^17.0.5",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   },
   "peerDependencies": {
     "react": "^16.13.1",
