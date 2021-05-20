@@ -1,6 +1,5 @@
 {
   "name": "react-example",
-  "version": "2.6.1",
   "private": true,
   "dependencies": {
     "@rest-api-handler/fetch-http-client": "^2.6.1",

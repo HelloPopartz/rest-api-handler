@@ -7,11 +7,11 @@ type TestResource = {
   data: number
 }
 
-const mockedHttpClient = (_config?: any) => async (_requestData: RouteData<any>) => jest.fn()
+const mockedHttpClient = (_config?: any) => async (_requestData: RouteData) => jest.fn()
 type HttpClient = typeof mockedHttpClient
 
-describe('#createResource', function() {
-  it('Creates correctly a store with the default REST handlers', function() {
+describe('#createResource', function () {
+  it('Creates correctly a store with the default REST handlers', function () {
     const resource = createResource<TestResource, HttpClient>('test', 'testUrl', mockedHttpClient)
     const { create, remove, get, list, patch, put } = resource.getApiHandlers()
 
@@ -23,7 +23,7 @@ describe('#createResource', function() {
     expect(put).toBeTruthy()
   })
 
-  it('Creates correctly a store with custom handlers', function() {
+  it('Creates correctly a store with custom handlers', function () {
     const routes = {
       customRoute: createRoute({
         method: RouteMethod.get,

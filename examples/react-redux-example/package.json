@@ -1,6 +1,5 @@
 {
   "name": "react-redux-example",
-  "version": "2.6.1",
   "private": true,
   "dependencies": {
     "@rest-api-handler/core": "^2.6.1",
