@@ -55,11 +55,11 @@ export const entityStore = createResource<Entity, NetworkClient>(
 
 ## `networkClient`
 
-Middleware for making network requests. We provide two typical network clients, `@rest-api-handler/fetch-http-client` and `@rest-api-handler/axios-http-client`. It can also be customized, please see [the following section](#-Using-a-custom-network-client)
+Middleware for making network requests. We provide two typical network clients, `@rest-api-handler/fetch-http-client` and `@rest-api-handler/axios-http-client`. It can also be customized, please see [the following section](#Using-a-custom-network-client)
 
 ## `extraRoutes` (optional)
 
-Add extra methods for the `getApiHandlers` function. Please see [the following section](#-Using-a-custom-route) for adding more methods
+Add extra methods for the `getApiHandlers` function. Please see [the following section](#Using-a-custom-route) for adding more methods
 
 ## `entityConfig` (optional)
 
@@ -110,7 +110,7 @@ Overrides an entity. It can provide a custom `transformData`
 
 ### `getApiHandlers`
 
-Provides `get`, `list`, `patch`, `put`, `create` and `delete` methods for managing the REST resource. It also provides the extra methods defined in the `extraRoutes`. Please see [the following section](#-Using-a-custom-route) for adding more methods
+Provides `get`, `list`, `patch`, `put`, `create` and `delete` methods for managing the REST resource. It also provides the extra methods defined in the `extraRoutes`. Please see [the following section](#Using-a-custom-route) for adding more methods
 
 ### `getResource`
 
@@ -150,6 +150,28 @@ export const networkClient = createNetworkClient((token: string) => {
   }
 })
 ```
+
+Every network request receives the following arguments
+
+```jsx
+export type NetworkClientRequestData = {
+  resourceUrl: string
+  resourceId?: any
+  resource?: string
+  routeParams?: any[]
+  queryParams?: Record<string, any>
+  method: RouteMethod
+  body?: any
+}
+```
+
+`resourceUrl`, `resource`, `resourceId`, `routeParams` and `queryParams` are used in the default middlewares (`@rest-api-handler/fetch-http-client` and `@rest-api-handler/axios-http-client`) to construct the url, following this structure
+
+```jsx
+const url = `${resourceUrl}/${resourceId}/${resource}/${...routeParams}?${queryParams}`
+```
+
+`method` is the HTTP method used for the request and `body` is, as you may think, the body of the request.
 
 ## Using a custom route
 
@@ -216,3 +238,33 @@ Delete the cached resource with the matching `resourceId` defined by the route
 ### `resource`
 
 Append to the end of the url the provided `string`
+
+### `handler`
+
+Define what if passed to the network client. It receives a `NetworkClientRequestData` object, similar to the one [the network client receives](#Using-a-custom-network-client)
+
+## How to integrate with redux
+
+```jsx
+import { connectToRestResources, createConnectedResource } from '@rest-api-handler/redux'
+import { axiosHttpClient, AxiosHttpClient } from '@rest-api-handler/axios-http-client'
+
+const entities = {
+  [SOME_ENTITY_RESOURCE_ID]: createConnectedResource<SomeEntityType, AxiosHttpClient>(
+    SOME_ENTITY_RESOURCE_ID,
+    SOME_ENTITY_API_PATH,
+    axiosHttpClient,
+  ),
+  [OTHER_ENTITY_RESOURCE_ID]: createConnectedResource<Analysis, AxiosHttpClient>(
+    OTHER_ENTITY_RESOURCE_ID,
+    OTHER_ENTITY_API_PATH,
+    axiosHttpClient,
+  ),
+}
+
+const store = createStore(
+  rootReducer,
+  initialState,
+  composeEnhancers(...otherMiddlewares, connectToRestResources(entities))
+)
+```
